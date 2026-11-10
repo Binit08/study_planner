@@ -72,6 +72,38 @@ flam/
 
 ---
 
+## SOLID Principles Implementation
+
+The codebase strictly follows the **SOLID** architectural design principles across frontend components and backend services:
+
+* **S — Single Responsibility Principle (SRP):**
+  * `lib/server/pdf.js`: Exclusively handles binary buffer validation, PDF text stream extraction, and whitespace sanitization.
+  * `lib/server/ai.js`: Exclusively manages Google Gemini SDK communication, structured JSON schemas, and multi-stage JSON repair.
+  * `lib/server/scoring.js`: Pure mathematical scoring, percentage calculation, and wrong-question isolation with zero side-effects.
+  * `lib/schemas/studySet.js`: Single source of truth for runtime validation contracts using Zod.
+  * `components/flashcards/FlashcardViewer.js`: Only handles flashcard rendering, 3D flip animation, and mastery state transitions.
+  * `app/api/*`: Route Handlers act solely as HTTP transport controllers—parsing requests, validating inputs, delegating to services, and returning structured JSON.
+
+* **O — Open/Closed Principle (OCP):**
+  * Generation modes (`flashcards`, `quiz`, `both`) and study tools are open for extension without modifying core parsing infrastructure.
+  * The AI output processor adapts to new study modalities by registering schemas rather than rewriting generation logic.
+
+* **L — Liskov Substitution Principle (LSP):**
+  * The storage repository in `lib/server/studySets.js` seamlessly swaps between remote Supabase Postgres and local `.data/` storage fallback while upholding identical method signatures and return shapes (`getAllStudySets`, `getStudySetById`, `createStudySet`, etc.). Route Handlers function identically regardless of which persistence backend is active.
+
+* **I — Interface Segregation Principle (ISP):**
+  * Client components declare focused, minimal prop contracts instead of monolithic objects:
+    * `<FlashcardViewer cards progressMap onUpdateProgress title />`
+    * `<QuizPlayer questions onSubmitAttempt title />`
+    * `<StudyChecklist items onToggleItem onAddItem onDeleteItem />`
+  * No component depends on handlers or data it does not utilize.
+
+* **D — Dependency Inversion Principle (DIP):**
+  * Route handlers depend on service abstractions (`lib/server/studySets.js`, `lib/server/scoring.js`), not raw database drivers.
+  * Interactive UI components depend on callback abstractions (`onUpdateProgress`, `onSubmitAttempt`, `onToggleItem`) passed down from container components or unified hooks (`useGeneration`), decoupling the visual presentation from transport and storage layers.
+
+---
+
 ## Handling Unpredictable AI Output (Core Evaluation Area)
 
 Handling LLM failures cleanly is what separates production-ready software from fragile prototypes. Here is how this application addresses unpredictable model behavior:
