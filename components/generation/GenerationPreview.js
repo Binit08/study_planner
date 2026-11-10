@@ -13,10 +13,9 @@ import {
   Copy,
   Check,
   Undo2,
-  ExternalLink,
+  PlusCircle,
+  FileText,
 } from "lucide-react";
-import Card from "@/components/ui/Card";
-import Badge from "@/components/ui/Badge";
 import FlashcardViewer from "@/components/flashcards/FlashcardViewer";
 import QuizPlayer from "@/components/quiz/QuizPlayer";
 import StudyChecklist from "@/components/checklist/StudyChecklist";
@@ -32,7 +31,6 @@ export default function GenerationPreview({
 }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  const [savedId, setSavedId] = useState(null);
   const [checklistItems, setChecklistItems] = useState(data?.checklist || []);
   const [progressMap, setProgressMap] = useState({});
   const [copiedMd, setCopiedMd] = useState(false);
@@ -43,7 +41,6 @@ export default function GenerationPreview({
   const flashcards = data?.flashcards || [];
   const quiz = data?.quiz || [];
 
-  // Determine available views based on what was generated
   const availableViews = [];
   if (flashcards.length > 0) availableViews.push("flashcards");
   if (quiz.length > 0) availableViews.push("quiz");
@@ -51,7 +48,6 @@ export default function GenerationPreview({
 
   const [activeView, setActiveView] = useState(availableViews[0] || "flashcards");
 
-  // Track review counts for tab headers
   const reviewedCardsCount = Object.keys(progressMap).length;
   const doneChecklistCount = checklistItems.filter((i) => i.completed).length;
 
@@ -59,7 +55,7 @@ export default function GenerationPreview({
     setProgressMap((prev) => ({ ...prev, [cardIndex]: status }));
   };
 
-  // Anki CSV Export
+  // Anki Export
   const handleExportAnki = () => {
     if (!flashcards || flashcards.length === 0) return;
     const rows = [
@@ -121,7 +117,7 @@ export default function GenerationPreview({
     }
   };
 
-  // Refinement with Undo History
+  // Refine with Undo Stack
   const handleRefine = (prompt) => {
     setHistoryStack((prev) => [...prev, data]);
     setVersionNumber((v) => v + 1);
@@ -164,7 +160,6 @@ export default function GenerationPreview({
         throw new Error(json.error || "Failed to save study set");
       }
 
-      setSavedId(json.data.id);
       router.push(`/study/${json.data.id}`);
     } catch (err) {
       alert(`Error saving study set: ${err.message}`);
@@ -187,210 +182,200 @@ export default function GenerationPreview({
     setChecklistItems((prev) => prev.filter((item, idx) => (item.id || idx) !== id));
   };
 
-  const viewConfig = {
-    flashcards: {
-      icon: Layers,
-      label: "Flashcards",
-      badge: `${reviewedCardsCount}/${flashcards.length} reviewed`,
-      color: "accent-blue",
-      bgActive: "bg-accent-blue/15 border-accent-blue/50 text-accent-blue shadow-sm",
-      bgHover: "hover:bg-accent-blue/5 hover:border-accent-blue/20",
-    },
-    quiz: {
-      icon: BookOpen,
-      label: "Quiz",
-      badge: `${quiz.length} Questions`,
-      color: "accent-amber",
-      bgActive: "bg-accent-amber/15 border-accent-amber/50 text-accent-amber shadow-sm",
-      bgHover: "hover:bg-accent-amber/5 hover:border-accent-amber/20",
-    },
-    checklist: {
-      icon: CheckSquare,
-      label: "Checklist",
-      badge: `${doneChecklistCount}/${checklistItems.length} completed`,
-      color: "accent-sky",
-      bgActive: "bg-accent-sky/15 border-accent-sky/50 text-accent-sky shadow-sm",
-      bgHover: "hover:bg-accent-sky/5 hover:border-accent-sky/20",
-    },
-  };
-
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in pb-12">
-      {/* Header Bar */}
-      <Card className="border-border-subtle bg-surface/60 backdrop-blur-xl p-6 relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="accent" size="xs">
-                {data.topic || "General Study"}
-              </Badge>
-              {sourceMeta?.name && (
-                <span className="text-[11px] text-accent-sky font-mono bg-accent-sky/10 border border-accent-sky/20 px-2 py-0.5 rounded-md">
-                  PDF: {sourceMeta.name}
-                </span>
-              )}
-              {versionNumber > 1 && (
-                <span className="text-[11px] text-amber-300 font-mono bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
-                  v{versionNumber} Refined
-                </span>
-              )}
+    <div className="space-y-8 animate-fade-in">
+      {/* Top Banner Header */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b-2 border-dashed border-[#2d2d2d]/30 pb-6">
+        <div>
+          <span className="text-sm font-bold uppercase tracking-wider bg-yellow-200 border border-[#2d2d2d] px-2.5 py-0.5 rounded-full inline-block mb-2">
+            Study Set Generated ✨
+          </span>
+          <h1 className="text-4xl md:text-5xl font-bold font-hand text-[#2d2d2d]">
+            {data.title || "Your Study Set Ready!"}
+          </h1>
+          {data.summary && (
+            <p className="text-lg text-slate-600 max-w-3xl mt-1 leading-relaxed">
+              {data.summary}
+            </p>
+          )}
+        </div>
+      </header>
+
+      {/* Main 2-Column Grid */}
+      <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Summary Card, Export & Refinement (4 cols) */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Summary Card with tape effect */}
+          <div className="bg-white p-6 wobbly-border hard-shadow tape-effect relative rotate-1 space-y-4">
+            <h2 className="text-2xl font-bold font-hand mb-2">Set Summary</h2>
+            <div className="space-y-2 text-lg">
+              <p>
+                <span className="font-bold">Topic:</span> {data.topic || "General"}
+              </p>
+              <p>
+                <span className="font-bold">Source:</span>{" "}
+                {sourceMeta?.name ? sourceMeta.name : "Text Notes"}
+              </p>
+              <p>
+                <span className="font-bold">Version:</span> v{versionNumber}.0{" "}
+                {versionNumber > 1 ? "Refined" : "Fresh"}
+              </p>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
-              {data.title}
-            </h2>
+            {/* Action buttons */}
+            <div className="pt-2 space-y-3">
+              <button
+                type="button"
+                onClick={handleSaveToLibrary}
+                disabled={isSaving}
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-green-400 text-[#2d2d2d] font-bold text-xl font-hand wobbly-border-sm hard-shadow-sm hover:translate-y-0.5 transition-all btn-press cursor-pointer"
+              >
+                <span>{isSaving ? "Saving..." : "Save to Library"}</span>
+                <Save className="w-5 h-5" />
+              </button>
 
-            {data.summary && (
-              <p className="text-xs text-text-secondary leading-relaxed max-w-2xl">
-                {data.summary}
-              </p>
-            )}
+              <button
+                type="button"
+                onClick={onReset}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-slate-800 font-bold text-lg font-hand wobbly-border-sm hard-shadow-sm hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                <span>Generate New</span>
+                <PlusCircle className="w-5 h-5 text-slate-700" />
+              </button>
+            </div>
           </div>
 
-          {/* Action Tools: Export, Copy, Save, Reset */}
-          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-            {/* Anki Export */}
-            {flashcards.length > 0 && (
+          {/* Quick Export Card */}
+          <div className="p-6 border-2 border-dashed border-slate-300 wobbly-border-sm bg-slate-50 rotate-[-1deg] space-y-3">
+            <h3 className="text-xl font-bold font-hand">Quick Export</h3>
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={handleExportAnki}
-                className="px-3 py-2 rounded-xl text-xs font-medium bg-surface text-text-secondary border border-border-subtle hover:text-text-primary hover:border-border-translucent transition-all flex items-center gap-1.5"
-                title="Download standard 2-column Anki CSV file"
+                className="flex flex-col items-center justify-center p-3 bg-white border-2 border-slate-800 wobbly-border-sm hard-shadow-sm hover:bg-yellow-50 transition-all font-bold text-sm uppercase"
+                title="Download 2-column Anki CSV"
               >
-                <Download className="w-3.5 h-3.5" />
-                Anki CSV
+                <Download className="w-5 h-5 mb-1 text-slate-700" />
+                <span>Anki CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyMarkdown}
+                className={`flex flex-col items-center justify-center p-3 border-2 border-slate-800 wobbly-border-sm hard-shadow-sm transition-all font-bold text-sm uppercase ${
+                  copiedMd ? "bg-green-200" : "bg-white hover:bg-yellow-50"
+                }`}
+                title="Copy formatted Markdown"
+              >
+                {copiedMd ? (
+                  <Check className="w-5 h-5 mb-1 text-green-700" />
+                ) : (
+                  <Copy className="w-5 h-5 mb-1 text-slate-700" />
+                )}
+                <span>{copiedMd ? "Copied!" : "Copy MD"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Refinement Loop */}
+          <div className="space-y-3">
+            <RefinementBar onRefine={handleRefine} isLoading={isLoading} />
+            {versionNumber > 1 && (
+              <button
+                type="button"
+                onClick={handleUndoRefinement}
+                className="w-full py-2 bg-yellow-100 border border-slate-400 rounded-xl text-sm font-bold text-slate-700 hover:bg-yellow-200 flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Undo2 className="w-4 h-4" />
+                Revert to v{versionNumber - 1}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Tab Viewers (8 cols) */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Tab buttons */}
+          <div className="flex flex-wrap gap-3">
+            {flashcards.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveView("flashcards")}
+                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all rotate-1 ${
+                  activeView === "flashcards"
+                    ? "bg-yellow-400 hard-shadow-sm scale-105"
+                    : "bg-white hover:bg-yellow-50"
+                }`}
+              >
+                Flashcards ({flashcards.length})
               </button>
             )}
 
-            {/* Copy Markdown */}
-            <button
-              type="button"
-              onClick={handleCopyMarkdown}
-              className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all flex items-center gap-1.5 ${
-                copiedMd
-                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                  : "bg-surface text-text-secondary border-border-subtle hover:text-text-primary hover:border-border-translucent"
-              }`}
-              title="Copy complete study set to clipboard as Markdown"
-            >
-              {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiedMd ? "Copied!" : "Copy MD"}
-            </button>
-
-            {/* Reset */}
-            <button
-              type="button"
-              onClick={onReset}
-              className="px-3 py-2 rounded-xl text-xs font-medium bg-surface text-text-secondary border border-border-subtle hover:text-text-primary hover:bg-surface-hover transition-all flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              New Prompt
-            </button>
-
-            {/* Save to Supabase */}
-            <button
-              type="button"
-              onClick={handleSaveToLibrary}
-              disabled={isSaving}
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-accent-amber to-accent-sky text-black hover:opacity-90 disabled:opacity-50 transition-all flex items-center gap-1.5 shadow-md"
-            >
-              <Save className="w-3.5 h-3.5" />
-              {isSaving ? "Saving..." : "Save to Library"}
-            </button>
-          </div>
-        </div>
-
-        {/* Delta Refinement Notification Banner if version > 1 */}
-        {versionNumber > 1 && (
-          <div className="mt-4 pt-3 border-t border-border-subtle/60 flex items-center justify-between gap-3 text-xs">
-            <span className="text-text-secondary truncate">
-              <span className="text-amber-300 font-semibold mr-1.5">&bull; Refinement applied:</span>
-              {lastRefinementNote || "Study deck updated"}
-            </span>
-            <button
-              type="button"
-              onClick={handleUndoRefinement}
-              className="text-text-tertiary hover:text-amber-300 transition-colors flex items-center gap-1 text-[11px] flex-shrink-0"
-            >
-              <Undo2 className="w-3.5 h-3.5" />
-              Undo Refinement (v{versionNumber - 1})
-            </button>
-          </div>
-        )}
-      </Card>
-
-      {/* View Switcher — prominent large tabs with real-time completion stats */}
-      {availableViews.length > 1 && (
-        <div className="flex items-center gap-3">
-          {availableViews.map((viewId) => {
-            const cfg = viewConfig[viewId];
-            const Icon = cfg.icon;
-            const isActive = activeView === viewId;
-
-            return (
+            {quiz.length > 0 && (
               <button
-                key={viewId}
-                onClick={() => setActiveView(viewId)}
-                className={`flex-1 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2.5 px-4 py-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all ${
-                  isActive
-                    ? cfg.bgActive
-                    : `bg-surface/40 border-border-subtle text-text-tertiary ${cfg.bgHover}`
+                type="button"
+                onClick={() => setActiveView("quiz")}
+                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all -rotate-1 ${
+                  activeView === "quiz"
+                    ? "bg-yellow-400 hard-shadow-sm scale-105"
+                    : "bg-white hover:bg-yellow-50"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4" />
-                  <span>{cfg.label}</span>
-                </div>
-                <span
-                  className={`font-mono text-[10px] sm:text-xs px-2 py-0.5 rounded-md ${
-                    isActive ? "bg-white/10" : "bg-surface border border-border-subtle"
-                  }`}
-                >
-                  {cfg.badge}
-                </span>
+                Quiz ({quiz.length})
               </button>
-            );
-          })}
+            )}
+
+            {checklistItems.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveView("checklist")}
+                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all rotate-1 ${
+                  activeView === "checklist"
+                    ? "bg-yellow-400 hard-shadow-sm scale-105"
+                    : "bg-white hover:bg-yellow-50"
+                }`}
+              >
+                Checklist ({doneChecklistCount}/{checklistItems.length})
+              </button>
+            )}
+          </div>
+
+          {/* View Components with State Preservation */}
+          <div className="space-y-6">
+            {/* Flashcards View */}
+            {flashcards.length > 0 && (
+              <div className={activeView === "flashcards" ? "block" : "hidden"}>
+                <FlashcardViewer
+                  cards={flashcards}
+                  title={data.title}
+                  progressMap={progressMap}
+                  onUpdateProgress={handleUpdateProgress}
+                  onRefineCard={handleRefine}
+                />
+              </div>
+            )}
+
+            {/* Quiz View */}
+            {quiz.length > 0 && (
+              <div className={activeView === "quiz" ? "block" : "hidden"}>
+                <QuizPlayer questions={quiz} title={data.title} />
+              </div>
+            )}
+
+            {/* Checklist View */}
+            {checklistItems.length > 0 && (
+              <div className={activeView === "checklist" ? "block" : "hidden"}>
+                <StudyChecklist
+                  items={checklistItems}
+                  onToggleItem={handleToggleChecklist}
+                  onAddItem={handleAddChecklist}
+                  onDeleteItem={handleDeleteChecklist}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      )}
-
-      {/* Refinement Loop */}
-      <RefinementBar onRefine={handleRefine} isLoading={isLoading} />
-
-      {/* Single Active Content View with State Preservation */}
-      <div>
-        {/* Flashcards View */}
-        {flashcards.length > 0 && (
-          <div className={activeView === "flashcards" ? "block space-y-4 animate-fade-in" : "hidden"}>
-            <FlashcardViewer
-              cards={flashcards}
-              title={data.title}
-              progressMap={progressMap}
-              onUpdateProgress={handleUpdateProgress}
-              onRefineCard={handleRefine}
-            />
-          </div>
-        )}
-
-        {/* Quiz View (State preserved across tab switches) */}
-        {quiz.length > 0 && (
-          <div className={activeView === "quiz" ? "block space-y-4 animate-fade-in" : "hidden"}>
-            <QuizPlayer questions={quiz} title={data.title} />
-          </div>
-        )}
-
-        {/* Checklist View */}
-        {checklistItems.length > 0 && (
-          <div className={activeView === "checklist" ? "block space-y-4 animate-fade-in" : "hidden"}>
-            <StudyChecklist
-              items={checklistItems}
-              onToggleItem={handleToggleChecklist}
-              onAddItem={handleAddChecklist}
-              onDeleteItem={handleDeleteChecklist}
-            />
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 }

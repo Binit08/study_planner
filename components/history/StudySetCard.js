@@ -1,22 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Layers,
-  BookOpen,
-  Calendar,
-  FileText,
-  FileUp,
-  Trash2,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
-import Card from "@/components/ui/Card";
-import Badge from "@/components/ui/Badge";
+import { FileText, FileUp, Trash2, ArrowRight } from "lucide-react";
 
-export default function StudySetCard({ set, onDelete }) {
+export default function StudySetCard({ set, onDelete, rotation = "rotate-1" }) {
   const cardCount = Array.isArray(set.flashcards) ? set.flashcards.length : 0;
   const quizCount = Array.isArray(set.quiz) ? set.quiz.length : 0;
+  const attemptCount = Array.isArray(set.attempts) ? set.attempts.length : 0;
 
   const dateStr = set.created_at
     ? new Date(set.created_at).toLocaleDateString(undefined, {
@@ -27,59 +17,77 @@ export default function StudySetCard({ set, onDelete }) {
     : "Recently";
 
   return (
-    <Card hover className="group relative flex flex-col justify-between h-full p-5 space-y-4">
-      <div className="space-y-3">
+    <div
+      className={`bg-white p-6 wobbly-border-sm hard-shadow-sm card-3d-hover ${rotation} group flex flex-col justify-between h-full relative`}
+    >
+      <div>
         {/* Top Badges */}
-        <div className="flex items-center justify-between gap-2">
-          <Badge variant="accent" size="xs">
+        <div className="flex justify-between items-start mb-4">
+          <span className="px-3 py-1 bg-yellow-100 text-slate-900 font-bold text-xs uppercase wobbly-border-sm">
             {set.topic || "General"}
-          </Badge>
-          <div className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
-            {set.source_type === "pdf" ? (
-              <span className="flex items-center gap-1 text-accent-sky">
-                <FileUp className="w-3 h-3" /> PDF Source
+          </span>
+          <span className="text-xs text-slate-400 font-hand">{dateStr}</span>
+        </div>
+
+        {/* Source indicator */}
+        <div className="mb-4 flex items-center gap-2">
+          {set.source_type === "pdf" ? (
+            <>
+              <FileUp className="w-4 h-4 text-slate-400" />
+              <span className="text-[11px] uppercase font-bold text-slate-400">
+                Source: PDF Upload
               </span>
-            ) : (
-              <span className="flex items-center gap-1">
-                <FileText className="w-3 h-3" /> Notes
+            </>
+          ) : (
+            <>
+              <FileText className="w-4 h-4 text-slate-400" />
+              <span className="text-[11px] uppercase font-bold text-slate-400">
+                Source: Text Notes
               </span>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         {/* Title */}
         <Link href={`/study/${set.id}`} className="block">
-          <h3 className="text-base font-semibold text-text-primary tracking-tight group-hover:text-accent-sky transition-colors leading-snug">
+          <h3 className="text-2xl font-bold mb-3 font-hand leading-tight text-slate-900 group-hover:text-yellow-700 transition-colors">
             {set.title}
           </h3>
         </Link>
 
         {/* Preview snippet */}
         {set.source_preview && (
-          <p className="text-xs text-text-tertiary line-clamp-2 leading-relaxed">
+          <p className="text-slate-600 text-sm mb-6 line-clamp-3 leading-relaxed">
             {set.source_preview}
           </p>
         )}
       </div>
 
-      {/* Footer Metrics & Actions */}
-      <div className="pt-3 border-t border-border-subtle/80 flex items-center justify-between text-xs text-text-secondary">
-        <div className="flex items-center gap-3">
-          {cardCount > 0 && (
-            <span className="flex items-center gap-1 font-mono">
-              <Layers className="w-3.5 h-3.5 text-accent-blue" />
-              {cardCount} cards
-            </span>
-          )}
-          {quizCount > 0 && (
-            <span className="flex items-center gap-1 font-mono">
-              <BookOpen className="w-3.5 h-3.5 text-accent-yellow" />
-              {quizCount} qs
-            </span>
-          )}
+      {/* Metrics & Actions */}
+      <div>
+        <div className="flex justify-around py-4 border-y-2 border-dashed border-slate-200 mb-6 text-center">
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold font-hand text-slate-900">{cardCount}</span>
+            <span className="text-[11px] text-slate-400 uppercase font-bold">Cards</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold font-hand text-slate-900">{quizCount}</span>
+            <span className="text-[11px] text-slate-400 uppercase font-bold">Quizzes</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold font-hand text-slate-900">{attemptCount}</span>
+            <span className="text-[11px] text-slate-400 uppercase font-bold">Attempts</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/study/${set.id}`}
+            className="flex-1 bg-yellow-400 text-center py-2.5 font-bold font-hand text-lg wobbly-border-sm hover:bg-yellow-300 transition-all text-slate-900 flex items-center justify-center gap-2"
+          >
+            Study Now <ArrowRight className="w-4 h-4" />
+          </Link>
+
           {onDelete && (
             <button
               type="button"
@@ -89,21 +97,14 @@ export default function StudySetCard({ set, onDelete }) {
                   onDelete(set.id);
                 }
               }}
-              className="p-1 rounded text-text-tertiary hover:text-rose-400 transition-colors"
+              className="p-2.5 text-slate-300 hover:text-red-500 transition-colors rounded-lg"
               title="Delete set"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-5 h-5" />
             </button>
           )}
-
-          <Link
-            href={`/study/${set.id}`}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-accent-sky hover:underline"
-          >
-            Study <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-          </Link>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

@@ -1,30 +1,29 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   RotateCw,
   ChevronLeft,
   ChevronRight,
   ChevronsRight,
-  CheckCircle2,
-  Clock,
   HelpCircle,
   Volume2,
   VolumeX,
   Lightbulb,
   Sparkles,
+  Zap,
 } from "lucide-react";
-import Card from "@/components/ui/Card";
-import Badge from "@/components/ui/Badge";
 import FormattedContent from "@/components/ui/FormattedContent";
 
 export default function FlashcardViewer({
   cards = [],
+  flashcards = [],
   progressMap = {},
   onUpdateProgress,
   onRefineCard,
   title = "Flashcard Session",
 }) {
+  const deck = cards && cards.length > 0 ? cards : flashcards;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showHint, setShowHint] = useState(false);
@@ -32,9 +31,8 @@ export default function FlashcardViewer({
   const [cardOrder, setCardOrder] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Initialize or update order when cards or filter change
   useEffect(() => {
-    let indices = cards.map((_, i) => i);
+    let indices = deck.map((_, i) => i);
     if (filter !== "all") {
       indices = indices.filter((i) => {
         const status = progressMap[i] || "unseen";
@@ -45,13 +43,12 @@ export default function FlashcardViewer({
     setCurrentIndex(0);
     setIsFlipped(false);
     setShowHint(false);
-  }, [cards, filter, progressMap]);
+  }, [deck, filter, progressMap]);
 
   const activeIndex = cardOrder[currentIndex];
-  const currentCard = activeIndex !== undefined ? cards[activeIndex] : null;
+  const currentCard = activeIndex !== undefined ? deck[activeIndex] : null;
   const currentStatus = activeIndex !== undefined ? progressMap[activeIndex] || "unseen" : "unseen";
 
-  // Stop speech when card changes
   const stopSpeech = useCallback(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -89,7 +86,6 @@ export default function FlashcardViewer({
     [activeIndex, onUpdateProgress]
   );
 
-  // Text to Speech
   const handleToggleSpeak = (e) => {
     e.stopPropagation();
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -111,7 +107,6 @@ export default function FlashcardViewer({
     window.speechSynthesis.speak(utterance);
   };
 
-  // Keyboard navigation support: Space, Left/Right, 1 (Again), 2 (Hard), 3 (Easy)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
@@ -143,7 +138,6 @@ export default function FlashcardViewer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleFlip, handleNext, handlePrev, handleSetStatus]);
 
-  // Derive an active-recall hint from card back if not explicitly provided
   const getHint = () => {
     if (!currentCard?.back) return null;
     const sentences = currentCard.back.split(/[.?!]\s+/);
@@ -154,57 +148,61 @@ export default function FlashcardViewer({
     return `Hint: Relates to ${words.slice(0, 4).join(" ")}...`;
   };
 
-  // Statistics
-  const masteredCount = cards.filter((_, i) => progressMap[i] === "mastered").length;
-  const learningCount = cards.filter((_, i) => progressMap[i] === "learning").length;
-  const unseenCount = cards.length - masteredCount - learningCount;
-  const reviewedCount = masteredCount + learningCount;
+  const masteredCount = deck.filter((_, i) => progressMap[i] === "mastered").length;
+  const learningCount = deck.filter((_, i) => progressMap[i] === "learning").length;
+  const unseenCount = deck.length - masteredCount - learningCount;
 
-  if (!cards || cards.length === 0) {
+  if (!deck || deck.length === 0) {
     return (
-      <Card className="text-center py-12">
-        <p className="text-text-secondary text-sm">No flashcards available in this study set.</p>
-      </Card>
+      <div className="bg-white p-8 wobbly-border-sm hard-shadow-sm text-center">
+        <p className="text-xl font-hand text-slate-600">No flashcards in this set.</p>
+      </div>
     );
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-5 pb-8">
+    <div className="w-full space-y-5 pb-6">
       {/* Top Header & Mastery Bar */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary tracking-tight">{title}</h2>
-            <p className="text-xs text-text-tertiary">
-              <kbd className="px-1.5 py-0.5 rounded bg-surface border border-border-subtle text-[10px]">Space</kbd> flip &bull;{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-surface border border-border-subtle text-[10px]">1</kbd> Again &bull;{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-surface border border-border-subtle text-[10px]">2</kbd> Hard &bull;{" "}
-              <kbd className="px-1.5 py-0.5 rounded bg-surface border border-border-subtle text-[10px]">3</kbd> Easy
+            <h2 className="text-2xl font-bold font-hand text-[#2d2d2d]">{title}</h2>
+            <p className="text-base text-slate-500 font-hand">
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d] text-xs font-mono font-bold">Space</kbd> flip &bull;{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d] text-xs font-mono font-bold">1</kbd> Again &bull;{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d] text-xs font-mono font-bold">2</kbd> Hard &bull;{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d] text-xs font-mono font-bold">3</kbd> Easy
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="mastered">{masteredCount} Mastered</Badge>
-            <Badge variant="learning">{learningCount} Reviewing</Badge>
-            <Badge variant="unseen">{unseenCount} Unseen</Badge>
+            <span className="px-3 py-1 bg-green-100 border border-green-600 text-green-800 text-sm font-bold rounded-lg">
+              {masteredCount} Mastered
+            </span>
+            <span className="px-3 py-1 bg-yellow-100 border border-yellow-600 text-yellow-800 text-sm font-bold rounded-lg">
+              {learningCount} Reviewing
+            </span>
+            <span className="px-3 py-1 bg-slate-100 border border-slate-400 text-slate-700 text-sm font-bold rounded-lg">
+              {unseenCount} Unseen
+            </span>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-1.5 bg-surface rounded-full overflow-hidden flex border border-border-subtle/50">
+        {/* Paper Progress Bar */}
+        <div className="w-full h-3 bg-white rounded-full overflow-hidden flex border-2 border-[#2d2d2d] hard-shadow-sm">
           <div
-            className="h-full bg-emerald-400 transition-all duration-300"
+            className="h-full bg-green-400 transition-all duration-300"
             style={{ width: `${(masteredCount / cards.length) * 100}%` }}
           />
           <div
-            className="h-full bg-amber-400 transition-all duration-300"
+            className="h-full bg-yellow-300 transition-all duration-300"
             style={{ width: `${(learningCount / cards.length) * 100}%` }}
           />
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
-        <div className="flex items-center gap-1.5 text-xs flex-wrap">
+      <div className="flex items-center justify-between border-b-2 border-dashed border-[#2d2d2d]/30 pb-3 font-hand">
+        <div className="flex items-center gap-2 text-base flex-wrap">
           {[
             { id: "all", label: `All (${cards.length})` },
             { id: "learning", label: `Needs Review (${learningCount})` },
@@ -214,10 +212,10 @@ export default function FlashcardViewer({
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id)}
-              className={`px-2.5 py-1 rounded-md transition-all ${
+              className={`px-3 py-1 rounded-lg border-2 transition-all font-bold ${
                 filter === tab.id
-                  ? "bg-surface-hover text-text-primary font-medium border border-border-translucent"
-                  : "text-text-tertiary hover:text-text-secondary"
+                  ? "border-[#2d2d2d] bg-yellow-300 hard-shadow-sm"
+                  : "border-transparent bg-white hover:border-slate-300"
               }`}
             >
               {tab.label}
@@ -226,7 +224,7 @@ export default function FlashcardViewer({
         </div>
 
         {cardOrder.length > 0 && (
-          <span className="text-xs font-mono text-text-tertiary">
+          <span className="text-lg font-bold font-mono text-slate-600">
             Card {currentIndex + 1} of {cardOrder.length}
           </span>
         )}
@@ -236,189 +234,150 @@ export default function FlashcardViewer({
       {currentCard ? (
         <div
           onClick={handleFlip}
-          className="relative min-h-[250px] sm:min-h-[280px] rounded-2xl cursor-pointer select-none perspective-1000 group"
+          className="relative min-h-[300px] sm:min-h-[330px] rounded-2xl cursor-pointer select-none perspective-1000"
         >
           <div
-            className={`flip-card-inner min-h-[250px] sm:min-h-[280px] ${
+            className={`flip-card-inner min-h-[300px] sm:min-h-[330px] ${
               isFlipped ? "flipped" : ""
             }`}
           >
-            {/* FRONT FACE (Question / Term) */}
-            <div className="flip-card-front w-full min-h-[250px] sm:min-h-[280px] rounded-2xl border border-border-subtle bg-surface-translucent backdrop-blur-xl p-6 sm:p-7 flex flex-col justify-between shadow-glass hover:border-accent-sky/40 relative overflow-hidden transition-colors">
-              {/* Corner Glow */}
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none bg-accent-sky/20 opacity-60" />
-
+            {/* FRONT FACE (White Paper Card with wobbly border) */}
+            <div className="flip-card-front w-full min-h-[300px] sm:min-h-[330px] bg-white p-6 sm:p-8 wobbly-border-sm hard-shadow flex flex-col justify-between items-center rotate-1 relative transition-colors">
               {/* Top Bar */}
-              <div className="flex items-center justify-between z-10">
-                <span className="text-xs font-semibold tracking-wider uppercase text-text-tertiary flex items-center gap-1.5">
-                  Question / Term
+              <div className="w-full flex items-center justify-between">
+                <span className="text-xs font-bold font-mono bg-yellow-100 border border-[#2d2d2d] px-2.5 py-0.5 rounded uppercase">
+                  Card #{activeIndex + 1}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleToggleSpeak}
-                    className={`p-1.5 rounded-lg border text-xs transition-colors ${
-                      isSpeaking
-                        ? "bg-accent-sky/20 border-accent-sky text-accent-sky animate-pulse"
-                        : "bg-surface border-border-subtle text-text-tertiary hover:text-text-primary hover:border-border-translucent"
+                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${
+                      isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
                     }`}
-                    title={isSpeaking ? "Stop Speaking" : "Read Question Out Loud"}
+                    title="Read out loud"
                   >
-                    {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </button>
-                  <Badge
-                    variant={
-                      currentStatus === "mastered"
-                        ? "mastered"
-                        : currentStatus === "learning"
-                        ? "learning"
-                        : "unseen"
-                    }
-                    size="xs"
-                  >
-                    {currentStatus.toUpperCase()}
-                  </Badge>
+                  <span className="text-xs font-bold font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-300 uppercase">
+                    {currentStatus}
+                  </span>
                 </div>
               </div>
 
-              {/* Main Content Area */}
-              <div className="my-auto py-4 text-center z-10 flex flex-col items-center justify-center">
-                <div className="text-base sm:text-lg font-semibold tracking-tight text-text-primary leading-relaxed max-w-xl">
+              {/* Center Question */}
+              <div className="my-auto py-4 text-center flex flex-col items-center justify-center max-w-xl">
+                <HelpCircle className="w-10 h-10 text-yellow-500 mb-3" />
+                <div className="text-2xl sm:text-3xl font-bold font-hand text-[#2d2d2d] leading-snug">
                   <FormattedContent text={currentCard.front} />
                 </div>
 
-                {/* Progressive Disclosure Clue */}
                 {showHint && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 animate-fade-in max-w-md text-left"
+                    className="mt-4 p-3 bg-yellow-100/80 border-2 border-dashed border-yellow-500 rounded-xl text-base text-yellow-900 font-hand text-left animate-fade-in"
                   >
-                    <span className="font-semibold text-amber-300 mr-1.5">💡 Clue:</span>
+                    <span className="font-bold mr-1">💡 Clue:</span>
                     {getHint()}
                   </div>
                 )}
               </div>
 
-              {/* Bottom Controls / Helper */}
-              <div className="flex items-center justify-between z-10 text-[11px] text-text-tertiary pt-2 border-t border-border-subtle/50">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowHint((prev) => !prev);
-                    }}
-                    className="text-text-tertiary hover:text-amber-300 transition-colors flex items-center gap-1"
-                  >
-                    <Lightbulb className="w-3.5 h-3.5" />
-                    {showHint ? "Hide Clue" : "Show Clue (H)"}
-                  </button>
-                </div>
-                <span>Click card or Space to reveal</span>
+              {/* Bottom Helpers */}
+              <div className="w-full flex items-center justify-between text-base font-hand text-slate-500 pt-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowHint((prev) => !prev);
+                  }}
+                  className="hover:text-yellow-700 flex items-center gap-1 font-bold"
+                >
+                  <Lightbulb className="w-4 h-4 text-yellow-600" />
+                  {showHint ? "Hide Clue" : "Show Clue (H)"}
+                </button>
+                <span className="italic">Click card or Space to reveal</span>
               </div>
             </div>
 
-            {/* BACK FACE (Answer / Explanation) */}
-            <div className="flip-card-back w-full min-h-[250px] sm:min-h-[280px] rounded-2xl border border-accent-amber/40 bg-surface/80 backdrop-blur-xl p-6 sm:p-7 flex flex-col justify-between shadow-glass relative overflow-hidden transition-colors">
-              {/* Corner Glow */}
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none bg-accent-amber/20 opacity-100" />
-
+            {/* BACK FACE (Yellow Tint Paper Card) */}
+            <div className="flip-card-back w-full min-h-[300px] sm:min-h-[330px] bg-yellow-50 p-6 sm:p-8 wobbly-border-sm hard-shadow flex flex-col justify-between items-center rotate-1 relative transition-colors">
               {/* Top Bar */}
-              <div className="flex items-center justify-between z-10">
-                <span className="text-xs font-semibold tracking-wider uppercase text-text-tertiary">
+              <div className="w-full flex items-center justify-between">
+                <span className="text-xs font-bold font-mono bg-yellow-200 border border-[#2d2d2d] px-2.5 py-0.5 rounded uppercase">
                   Answer & Explanation
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleToggleSpeak}
-                    className={`p-1.5 rounded-lg border text-xs transition-colors ${
-                      isSpeaking
-                        ? "bg-accent-amber/20 border-accent-amber text-amber-300 animate-pulse"
-                        : "bg-surface border-border-subtle text-text-tertiary hover:text-text-primary hover:border-border-translucent"
+                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${
+                      isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
                     }`}
-                    title={isSpeaking ? "Stop Speaking" : "Read Answer Out Loud"}
+                    title="Read out loud"
                   >
-                    {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                    {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </button>
-                  <Badge
-                    variant={
-                      currentStatus === "mastered"
-                        ? "mastered"
-                        : currentStatus === "learning"
-                        ? "learning"
-                        : "unseen"
-                    }
-                    size="xs"
-                  >
-                    {currentStatus.toUpperCase()}
-                  </Badge>
+                  <span className="text-xs font-bold font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-300 uppercase">
+                    {currentStatus}
+                  </span>
                 </div>
               </div>
 
-              {/* Main Content Area */}
-              <div className="my-auto py-3 text-center z-10 flex flex-col items-center justify-center">
-                <div className="text-sm sm:text-base font-normal text-text-primary leading-relaxed max-w-xl text-left">
+              {/* Center Answer */}
+              <div className="my-auto py-3 text-center flex flex-col items-center justify-center max-w-xl">
+                <Zap className="w-10 h-10 text-yellow-500 mb-2" />
+                <div className="text-lg sm:text-xl font-normal leading-relaxed text-[#2d2d2d] text-left">
                   <FormattedContent text={currentCard.back} />
                 </div>
               </div>
 
-              {/* Bottom Info Bar with Per-Card Quick Refine */}
-              <div className="flex items-center justify-between z-10 text-[11px] text-text-tertiary pt-2 border-t border-border-subtle/50">
+              {/* Bottom Actions */}
+              <div className="w-full flex items-center justify-between text-base font-hand text-slate-500 pt-2 border-t border-yellow-200">
                 {onRefineCard ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRefineCard(
-                          `Add a concrete real-world engineering architecture example (e.g. AWS/Cassandra/Linux) to card: "${currentCard.front}"`
-                        );
-                      }}
-                      className="text-text-tertiary hover:text-accent-sky transition-colors flex items-center gap-1"
-                    >
-                      <Sparkles className="w-3 h-3 text-accent-sky" />
-                      Add Example
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRefineCard(
+                        `Add a concrete real-world engineering architecture example to card: "${currentCard.front}"`
+                      );
+                    }}
+                    className="text-yellow-800 hover:underline flex items-center gap-1 font-bold"
+                  >
+                    <Sparkles className="w-4 h-4 text-yellow-600" />
+                    Add Example
+                  </button>
                 ) : (
                   <span>Rate your recall below</span>
                 )}
-                <span className="font-mono">Index #{activeIndex + 1}</span>
+                <span className="font-mono text-sm font-bold">Index #{activeIndex + 1}</span>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <Card className="text-center py-12 space-y-2">
-          <p className="text-text-secondary text-sm">No cards match the "{filter}" filter.</p>
-          <button
-            onClick={() => setFilter("all")}
-            className="text-xs text-accent-blue hover:underline"
-          >
-            Reset to all cards
-          </button>
-        </Card>
+        <div className="bg-white p-8 wobbly-border-sm hard-shadow-sm text-center">
+          <p className="text-xl font-hand text-slate-600">No cards match the "{filter}" filter.</p>
+        </div>
       )}
 
-      {/* Recall Evaluation & Navigation Controls */}
+      {/* Control Buttons */}
       <div className="pt-2">
         {currentCard && isFlipped ? (
-          /* Anki-style 3-Tier Recall Difficulty Bar (Again / Hard / Easy / Skip) */
-          <div className="w-full bg-[#141416]/95 backdrop-blur-xl border border-border-subtle rounded-2xl p-3 flex items-center justify-between gap-2.5 shadow-glass animate-fade-in">
-            {/* Skip */}
+          /* Post-Flip Rating Bar (Anki Style) */
+          <div className="w-full bg-white p-3.5 wobbly-border-sm hard-shadow flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={handleNext}
-              className="flex flex-col items-center justify-center px-3 py-2 text-text-tertiary hover:text-text-primary transition-all group rounded-xl hover:bg-surface"
+              className="flex flex-col items-center justify-center px-4 py-2 border-2 border-slate-300 rounded-xl hover:bg-slate-50 font-hand font-bold text-slate-600"
               title="Skip without rating"
             >
-              <ChevronsRight className="w-4.5 h-4.5 text-text-tertiary group-hover:text-text-primary group-hover:translate-x-0.5 transition-transform" />
-              <span className="text-[11px] font-medium mt-0.5">Skip</span>
+              <ChevronsRight className="w-5 h-5" />
+              <span className="text-sm">Skip</span>
             </button>
 
-            {/* 3 Difficulty Buttons */}
-            <div className="flex-1 grid grid-cols-3 gap-2">
+            <div className="flex-1 grid grid-cols-3 gap-3">
               {/* Again (1) */}
               <button
                 type="button"
@@ -426,16 +385,11 @@ export default function FlashcardViewer({
                   handleSetStatus("learning");
                   handleNext();
                 }}
-                className="flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border border-border-subtle bg-surface/70 hover:bg-rose-500/15 hover:border-rose-500/40 text-text-primary transition-all group active:scale-95 shadow-sm"
+                className="py-3 px-2 rounded-xl border-2 border-[#2d2d2d] bg-red-100 hover:bg-red-200 hard-shadow-sm btn-press font-hand font-bold text-red-900 flex flex-col items-center justify-center cursor-pointer"
               >
-                <span className="text-lg font-bold text-red-500 leading-none mb-1 group-hover:scale-110 transition-transform">
-                  ✕
-                </span>
-                <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary flex items-center gap-1">
-                  Again
-                  <kbd className="hidden sm:inline text-[9px] text-text-tertiary font-mono px-1 rounded bg-black/50 border border-border-subtle">
-                    1
-                  </kbd>
+                <span className="text-xl leading-none mb-0.5">✕</span>
+                <span className="text-base flex items-center gap-1">
+                  Again <kbd className="text-[10px] font-mono px-1 rounded bg-white border border-[#2d2d2d]">1</kbd>
                 </span>
               </button>
 
@@ -446,71 +400,60 @@ export default function FlashcardViewer({
                   handleSetStatus("learning");
                   handleNext();
                 }}
-                className="flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border border-border-subtle bg-surface/70 hover:bg-amber-500/15 hover:border-amber-500/40 text-text-primary transition-all group active:scale-95 shadow-sm"
+                className="py-3 px-2 rounded-xl border-2 border-[#2d2d2d] bg-yellow-200 hover:bg-yellow-300 hard-shadow-sm btn-press font-hand font-bold text-yellow-900 flex flex-col items-center justify-center cursor-pointer"
               >
-                <span className="text-lg leading-none mb-1 group-hover:scale-110 transition-transform">
-                  ⚡
-                </span>
-                <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary flex items-center gap-1">
-                  Hard
-                  <kbd className="hidden sm:inline text-[9px] text-text-tertiary font-mono px-1 rounded bg-black/50 border border-border-subtle">
-                    2
-                  </kbd>
+                <span className="text-xl leading-none mb-0.5">⚡</span>
+                <span className="text-base flex items-center gap-1">
+                  Hard <kbd className="text-[10px] font-mono px-1 rounded bg-white border border-[#2d2d2d]">2</kbd>
                 </span>
               </button>
 
-              {/* Easy / Mastered (3) */}
+              {/* Easy (3) */}
               <button
                 type="button"
                 onClick={() => {
                   handleSetStatus("mastered");
                   handleNext();
                 }}
-                className="flex flex-col items-center justify-center py-2.5 px-2 rounded-xl border border-border-subtle bg-surface/70 hover:bg-emerald-500/15 hover:border-emerald-500/40 text-text-primary transition-all group active:scale-95 shadow-sm"
+                className="py-3 px-2 rounded-xl border-2 border-[#2d2d2d] bg-green-200 hover:bg-green-300 hard-shadow-sm btn-press font-hand font-bold text-green-900 flex flex-col items-center justify-center cursor-pointer"
               >
-                <span className="text-lg leading-none mb-1 group-hover:scale-110 transition-transform">
-                  😄
-                </span>
-                <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary flex items-center gap-1">
-                  Easy
-                  <kbd className="hidden sm:inline text-[9px] text-text-tertiary font-mono px-1 rounded bg-black/50 border border-border-subtle">
-                    3
-                  </kbd>
+                <span className="text-xl leading-none mb-0.5">😄</span>
+                <span className="text-base flex items-center gap-1">
+                  Easy <kbd className="text-[10px] font-mono px-1 rounded bg-white border border-[#2d2d2d]">3</kbd>
                 </span>
               </button>
             </div>
 
-            {/* Next */}
             <button
               type="button"
               onClick={handleNext}
-              className="flex items-center justify-center px-3 py-3 text-text-tertiary hover:text-text-primary transition-all group rounded-xl hover:bg-surface"
+              className="p-3 border-2 border-slate-300 rounded-xl hover:bg-slate-50 text-slate-600"
               title="Next card"
             >
-              <ChevronsRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              <ChevronsRight className="w-5 h-5" />
             </button>
           </div>
         ) : (
           /* Pre-Flip Bar */
-          <div className="w-full bg-surface-translucent backdrop-blur-xl border border-border-subtle rounded-2xl p-2.5 flex items-center justify-between gap-3 shadow-glass">
+          <div className="w-full bg-white p-3 wobbly-border-sm hard-shadow-sm flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={handlePrev}
               disabled={cardOrder.length <= 1}
-              className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="px-4 py-2 border-2 border-slate-300 rounded-xl hover:bg-slate-50 font-hand font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5" />
               Previous
             </button>
 
             <button
               type="button"
               onClick={handleFlip}
-              className="flex-1 max-w-sm inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-surface border border-border-translucent text-text-primary hover:bg-surface-hover hover:border-accent-sky/50 transition-all shadow-sm group"
+              className="flex-1 max-w-sm py-3 px-6 bg-yellow-400 font-bold font-hand text-xl wobbly-border-sm hard-shadow-sm hover:bg-yellow-300 btn-press flex items-center justify-center gap-2 cursor-pointer"
             >
-              <RotateCw className="w-4 h-4 text-accent-sky group-hover:rotate-180 transition-transform duration-500" />
-              Flip to Reveal Answer
-              <kbd className="text-[10px] text-text-tertiary font-mono px-1.5 py-0.5 rounded bg-black/40 border border-border-subtle">
+              <RotateCw className="w-5 h-5 text-[#2d2d2d]" />
+              <span>Flip to Reveal Answer</span>
+              <kbd className="text-xs font-mono px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d]">
                 Space
               </kbd>
             </button>
@@ -519,10 +462,10 @@ export default function FlashcardViewer({
               type="button"
               onClick={handleNext}
               disabled={cardOrder.length <= 1}
-              className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="px-4 py-2 border-2 border-slate-300 rounded-xl hover:bg-slate-50 font-hand font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
             >
               Next
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         )}

@@ -8,17 +8,15 @@ import {
   BookOpen,
   CheckSquare,
   ArrowLeft,
-  RefreshCw,
-  Award,
   Sparkles,
-  Calendar,
   Trash2,
   Download,
   Copy,
   Check,
+  Award,
+  FileText,
+  FileUp,
 } from "lucide-react";
-import Card from "@/components/ui/Card";
-import Badge from "@/components/ui/Badge";
 import FlashcardViewer from "@/components/flashcards/FlashcardViewer";
 import QuizPlayer from "@/components/quiz/QuizPlayer";
 import StudyChecklist from "@/components/checklist/StudyChecklist";
@@ -222,195 +220,192 @@ export default function StudySetDetailPage() {
 
   if (loading) {
     return (
-      <div className="py-24 text-center space-y-3">
-        <RefreshCw className="w-6 h-6 text-accent-sky animate-spin mx-auto" />
-        <p className="text-xs text-text-secondary">Loading study workspace...</p>
+      <div className="py-24 text-center space-y-4">
+        <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">
+          <Sparkles className="w-6 h-6 text-slate-800" />
+        </div>
+        <p className="text-xl font-hand text-slate-600">Loading study deck...</p>
       </div>
     );
   }
 
   if (error || !studySet) {
     return (
-      <Card className="text-center py-16 border-rose-500/30 bg-rose-950/10 space-y-3">
-        <p className="text-sm text-rose-200">Study set not found or error loading.</p>
+      <div className="bg-rose-50 p-10 wobbly-border-sm hard-shadow-sm text-center space-y-4 max-w-xl mx-auto">
+        <p className="text-xl font-hand text-rose-700">Study set not found or error loading.</p>
         <Link
           href="/history"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs bg-surface border border-border-subtle text-text-primary"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-white wobbly-border-sm hard-shadow-sm font-hand font-bold text-lg"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Library
         </Link>
-      </Card>
+      </div>
     );
   }
 
   const flashcards = studySet.flashcards || [];
   const quiz = studySet.quiz || [];
+  const masteredCount = flashcards.filter((_, i) => progressMap[i] === "mastered").length;
 
   return (
     <div className="space-y-8 pb-16">
-      {/* Top Breadcrumb & Metadata Card */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/history"
-            className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Library
-          </Link>
+      {/* Top Breadcrumb & Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <Link
+          href="/history"
+          className="inline-flex items-center gap-2 text-xl font-bold font-hand text-slate-700 hover:text-yellow-700 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          ← Back to Study Library
+        </Link>
 
-          <div className="flex items-center gap-2">
-            {flashcards.length > 0 && (
-              <button
-                type="button"
-                onClick={handleExportAnki}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface text-text-secondary border border-border-subtle hover:text-text-primary hover:border-border-translucent transition-all"
-                title="Download standard 2-column Anki CSV file"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Anki CSV
-              </button>
-            )}
-
+        <div className="flex flex-wrap items-center gap-3">
+          {flashcards.length > 0 && (
             <button
               type="button"
-              onClick={handleCopyMarkdown}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                copiedMd
-                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                  : "bg-surface text-text-secondary border-border-subtle hover:text-text-primary hover:border-border-translucent"
-              }`}
-              title="Copy complete study set to clipboard as Markdown"
+              onClick={handleExportAnki}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-white wobbly-border-sm hard-shadow-sm font-bold font-hand text-base hover:bg-yellow-50 transition-all text-slate-800"
+              title="Download standard 2-column Anki CSV file"
             >
-              {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              {copiedMd ? "Copied!" : "Copy MD"}
+              <Download className="w-4 h-4 text-yellow-600" />
+              Anki (.csv)
             </button>
+          )}
 
-            <button
-              onClick={handleDeleteSet}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-text-tertiary hover:text-rose-400 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete Set
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleCopyMarkdown}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 bg-white wobbly-border-sm hard-shadow-sm font-bold font-hand text-base transition-all text-slate-800 ${
+              copiedMd ? "bg-green-100 border-green-700" : "hover:bg-yellow-50"
+            }`}
+            title="Copy complete study set to clipboard as Markdown"
+          >
+            {copiedMd ? <Check className="w-4 h-4 text-green-700" /> : <Copy className="w-4 h-4 text-slate-700" />}
+            {copiedMd ? "Copied!" : "Copy MD"}
+          </button>
+
+          <button
+            onClick={handleDeleteSet}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white wobbly-border-sm text-slate-400 hover:text-red-500 hover:border-red-500 transition-colors font-bold font-hand text-base"
+            title="Delete this study set"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
+          </button>
         </div>
+      </div>
 
-        <Card className="p-6 bg-surface/60 backdrop-blur-xl border-border-subtle relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <Badge variant="accent" size="xs">
-                  {studySet.topic || "General"}
-                </Badge>
-                {studySet.source_type === "pdf" && (
-                  <span className="text-[11px] text-accent-sky font-mono">PDF Source</span>
-                )}
-              </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
-                {studySet.title}
-              </h1>
-              {studySet.source_preview && (
-                <p className="text-xs text-text-secondary max-w-2xl leading-relaxed">
-                  {studySet.source_preview}
-                </p>
+      {/* Hero Header Card */}
+      <div className="bg-white p-8 wobbly-border hard-shadow relative rotate-[-0.5deg]">
+        <div className="tape-effect" />
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-yellow-100 text-slate-900 font-bold text-xs uppercase wobbly-border-sm">
+                {studySet.topic || "General"}
+              </span>
+              {studySet.source_type === "pdf" ? (
+                <span className="flex items-center gap-1 text-xs text-slate-500 font-hand font-bold">
+                  <FileUp className="w-3.5 h-3.5" /> PDF Source
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-xs text-slate-500 font-hand font-bold">
+                  <FileText className="w-3.5 h-3.5" /> Notes Input
+                </span>
               )}
             </div>
 
-            {/* Quick stats pill */}
-            <div className="flex items-center gap-3 self-start sm:self-auto bg-surface border border-border-subtle px-3 py-2 rounded-xl text-xs">
-              <div className="text-center px-2">
-                <span className="block font-bold text-text-primary font-mono">
-                  {flashcards.length}
-                </span>
-                <span className="text-[10px] text-text-tertiary uppercase">Cards</span>
-              </div>
-              <div className="w-[1px] h-6 bg-border-subtle" />
-              <div className="text-center px-2">
-                <span className="block font-bold text-text-primary font-mono">{quiz.length}</span>
-                <span className="text-[10px] text-text-tertiary uppercase">Questions</span>
-              </div>
-              <div className="w-[1px] h-6 bg-border-subtle" />
-              <div className="text-center px-2">
-                <span className="block font-bold text-accent-sky font-mono">{attempts.length}</span>
-                <span className="text-[10px] text-text-tertiary uppercase">Attempts</span>
-              </div>
+            <h1 className="text-3xl md:text-4xl font-bold font-hand text-slate-900 leading-tight">
+              {studySet.title}
+            </h1>
+
+            {studySet.source_preview && (
+              <p className="text-base text-slate-600 max-w-2xl font-hand leading-relaxed">
+                {studySet.source_preview}
+              </p>
+            )}
+          </div>
+
+          {/* Quick Stats Box */}
+          <div className="flex items-center gap-4 bg-yellow-50/70 p-4 wobbly-border-sm self-start md:self-auto text-center">
+            <div className="px-2">
+              <span className="block text-2xl font-bold font-hand text-slate-900">{flashcards.length}</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold">Cards</span>
+            </div>
+            <div className="w-[1px] h-8 bg-slate-300" />
+            <div className="px-2">
+              <span className="block text-2xl font-bold font-hand text-slate-900">{quiz.length}</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold">Quizzes</span>
+            </div>
+            <div className="w-[1px] h-8 bg-slate-300" />
+            <div className="px-2">
+              <span className="block text-2xl font-bold font-hand text-slate-900">{attempts.length}</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold">Attempts</span>
             </div>
           </div>
+        </div>
 
-          {/* Tab Selector — prominent view switcher */}
-          <div className="flex items-center gap-3 pt-6 border-t border-border-subtle/80 mt-5">
-            {flashcards.length > 0 && (
-              <button
-                onClick={() => setActiveTab("flashcards")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
-                  activeTab === "flashcards"
-                    ? "bg-accent-blue/15 border-accent-blue/50 text-accent-blue"
-                    : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-accent-blue/5 hover:border-accent-blue/20"
-                }`}
-              >
-                <Layers className="w-4 h-4" />
-                Flashcards
-                <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
-                  activeTab === "flashcards" ? "bg-white/10" : "bg-surface border border-border-subtle"
-                }`}>{flashcards.length}</span>
-              </button>
-            )}
-
-            {quiz.length > 0 && (
-              <button
-                onClick={() => setActiveTab("quiz")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
-                  activeTab === "quiz"
-                    ? "bg-accent-amber/15 border-accent-amber/50 text-accent-amber"
-                    : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-accent-amber/5 hover:border-accent-amber/20"
-                }`}
-              >
-                <BookOpen className="w-4 h-4" />
-                Quiz
-                <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
-                  activeTab === "quiz" ? "bg-white/10" : "bg-surface border border-border-subtle"
-                }`}>{quiz.length}</span>
-              </button>
-            )}
-
+        {/* Tab Selector */}
+        <div className="flex items-center gap-3 pt-6 border-t-2 border-dashed border-slate-200 mt-6 overflow-x-auto">
+          {flashcards.length > 0 && (
             <button
-              onClick={() => setActiveTab("checklist")}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
-                activeTab === "checklist"
-                  ? "bg-accent-sky/15 border-accent-sky/50 text-accent-sky"
-                  : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-accent-sky/5 hover:border-accent-sky/20"
+              onClick={() => setActiveTab("flashcards")}
+              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
+                activeTab === "flashcards"
+                  ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
+                  : "bg-white hover:bg-yellow-50 text-slate-700"
               }`}
             >
-              <CheckSquare className="w-4 h-4" />
-              Checklist
-              <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
-                activeTab === "checklist" ? "bg-white/10" : "bg-surface border border-border-subtle"
-              }`}>{checklist.length}</span>
+              <Layers className="w-5 h-5" />
+              Flashcards ({flashcards.length})
             </button>
+          )}
 
-            {attempts.length > 0 && (
-              <button
-                onClick={() => setActiveTab("history")}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
-                  activeTab === "history"
-                    ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
-                    : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-emerald-500/5 hover:border-emerald-500/20"
-                }`}
-              >
-                <Award className="w-4 h-4" />
-                History
-                <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
-                  activeTab === "history" ? "bg-white/10" : "bg-surface border border-border-subtle"
-                }`}>{attempts.length}</span>
-              </button>
-            )}
-          </div>
-        </Card>
+          {quiz.length > 0 && (
+            <button
+              onClick={() => setActiveTab("quiz")}
+              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
+                activeTab === "quiz"
+                  ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
+                  : "bg-white hover:bg-yellow-50 text-slate-700"
+              }`}
+            >
+              <BookOpen className="w-5 h-5" />
+              Quiz ({quiz.length})
+            </button>
+          )}
+
+          <button
+            onClick={() => setActiveTab("checklist")}
+            className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
+              activeTab === "checklist"
+                ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
+                : "bg-white hover:bg-yellow-50 text-slate-700"
+            }`}
+          >
+            <CheckSquare className="w-5 h-5" />
+            Checklist ({checklist.length})
+          </button>
+
+          {attempts.length > 0 && (
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
+                activeTab === "history"
+                  ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
+                  : "bg-white hover:bg-yellow-50 text-slate-700"
+              }`}
+            >
+              <Award className="w-5 h-5" />
+              History ({attempts.length})
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Active Tab View with State Preservation */}
+      {/* Tab Views */}
       <div>
         {flashcards.length > 0 && (
           <div className={activeTab === "flashcards" ? "block" : "hidden"}>
@@ -443,13 +438,15 @@ export default function StudySetDetailPage() {
         </div>
 
         {activeTab === "history" && (
-          <div className="max-w-2xl mx-auto space-y-4">
-            <h3 className="text-sm font-semibold tracking-tight text-text-primary flex items-center gap-2">
-              <Award className="w-4 h-4 text-emerald-400" />
-              Past Quiz Submissions
-            </h3>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="border-b-2 border-dashed border-slate-200 pb-3">
+              <h3 className="text-2xl font-bold font-hand text-slate-900 flex items-center gap-2">
+                <Award className="w-6 h-6 text-yellow-600" />
+                Past Quiz Submissions
+              </h3>
+            </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {attempts.map((att, idx) => {
                 const pct = Math.round((att.score / att.total_questions) * 100);
                 const passed = pct >= 70;
@@ -458,21 +455,30 @@ export default function StudySetDetailPage() {
                   : "Recent";
 
                 return (
-                  <Card key={att.id || idx} className="p-4 flex items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-text-primary">
-                          Score: {att.score} / {att.total_questions} ({pct}%)
+                  <div
+                    key={att.id || idx}
+                    className="bg-white p-5 wobbly-border-sm hard-shadow-sm flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl font-bold font-hand text-slate-900">
+                          Score: {att.score} / {att.total_questions}
                         </span>
-                        <Badge variant={passed ? "mastered" : "learning"} size="xs">
+                        <span
+                          className={`px-3 py-0.5 rounded text-xs font-bold uppercase ${
+                            passed
+                              ? "bg-green-100 text-green-800 border border-green-600"
+                              : "bg-yellow-100 text-yellow-800 border border-yellow-600"
+                          }`}
+                        >
                           {passed ? "Passed" : "Needs Review"}
-                        </Badge>
+                        </span>
                       </div>
-                      <p className="text-[11px] text-text-tertiary">{dateStr}</p>
+                      <p className="text-sm font-hand text-slate-400 mt-1">{dateStr}</p>
                     </div>
 
-                    <span className="text-lg font-bold font-mono text-text-primary">{pct}%</span>
-                  </Card>
+                    <span className="text-3xl font-bold font-hand text-slate-900">{pct}%</span>
+                  </div>
                 );
               })}
             </div>
@@ -482,4 +488,3 @@ export default function StudySetDetailPage() {
     </div>
   );
 }
-

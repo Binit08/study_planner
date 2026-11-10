@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { History, Search, Plus, Sparkles, Filter, RefreshCw } from "lucide-react";
+import { Search, PlusCircle, Sparkles, Notebook, ArrowUpDown, BookOpen } from "lucide-react";
 import StudySetCard from "@/components/history/StudySetCard";
-import Card from "@/components/ui/Card";
 
 export default function HistoryPage() {
   const [sets, setSets] = useState([]);
@@ -12,6 +11,7 @@ export default function HistoryPage() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [topicFilter, setTopicFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   const fetchSets = async () => {
     setLoading(true);
@@ -42,133 +42,155 @@ export default function HistoryPage() {
     }
   };
 
-  // Extract distinct topics
+  // Distinct topics
   const topics = Array.from(new Set(sets.map((s) => s.topic).filter(Boolean)));
 
-  const filteredSets = sets.filter((s) => {
-    const matchesSearch =
-      s.title?.toLowerCase().includes(search.toLowerCase()) ||
-      s.topic?.toLowerCase().includes(search.toLowerCase());
-    const matchesTopic = topicFilter === "all" || s.topic === topicFilter;
-    return matchesSearch && matchesTopic;
-  });
+  const filteredSets = sets
+    .filter((s) => {
+      const matchesSearch =
+        s.title?.toLowerCase().includes(search.toLowerCase()) ||
+        s.topic?.toLowerCase().includes(search.toLowerCase()) ||
+        s.source_preview?.toLowerCase().includes(search.toLowerCase());
+      const matchesTopic = topicFilter === "all" || s.topic === topicFilter;
+      return matchesSearch && matchesTopic;
+    })
+    .sort((a, b) => {
+      if (sortBy === "oldest") {
+        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      }
+      if (sortBy === "most_studied") {
+        const countA = (a.attempts?.length || 0) + (a.progress?.length || 0);
+        const countB = (b.attempts?.length || 0) + (b.progress?.length || 0);
+        return countB - countA;
+      }
+      // default newest
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+
+  const cardRotations = ["rotate-1", "-rotate-1", "rotate-2", "-rotate-2", "rotate-1"];
 
   return (
-    <div className="space-y-8 pb-16">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-subtle pb-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary flex items-center gap-2">
-            <History className="w-6 h-6 text-accent-blue" />
-            Study Library
-          </h1>
-          <p className="text-xs text-text-secondary mt-1">
-            Browse and review your saved study sets, flashcard decks, and quiz evaluations.
-          </p>
-        </div>
+    <div className="space-y-12 pb-16">
+      {/* Header */}
+      <header>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="relative inline-block rotate-[-1deg]">
+            <h1 className="text-4xl md:text-5xl font-bold font-hand mb-2">My Study Library</h1>
+            <div className="h-2 bg-yellow-300 w-full opacity-40 -mt-3 -ml-1 rounded" />
+          </div>
 
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-accent-amber to-accent-sky text-black hover:opacity-90 transition-all shadow-md self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4 text-black" />
-          Create New Set
-        </Link>
-      </div>
-
-      {/* Search and Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title or topic..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg bg-surface border border-border-subtle text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-sky/50"
-          />
-        </div>
-
-        {topics.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
-            <Filter className="w-3.5 h-3.5 text-text-tertiary mr-1" />
-            <button
-              onClick={() => setTopicFilter("all")}
-              className={`px-2.5 py-1 rounded-md transition-all ${
-                topicFilter === "all"
-                  ? "bg-surface-hover text-text-primary border border-border-translucent font-medium"
-                  : "text-text-tertiary hover:text-text-secondary"
-              }`}
-            >
-              All Topics
-            </button>
-            {topics.map((t) => (
+          {topics.length > 0 && (
+            <div className="flex flex-wrap gap-2.5">
               <button
-                key={t}
-                onClick={() => setTopicFilter(t)}
-                className={`px-2.5 py-1 rounded-md transition-all whitespace-nowrap ${
-                  topicFilter === t
-                    ? "bg-surface-hover text-text-primary border border-border-translucent font-medium"
-                    : "text-text-tertiary hover:text-text-secondary"
+                type="button"
+                onClick={() => setTopicFilter("all")}
+                className={`px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-lg transition-all ${
+                  topicFilter === "all" ? "bg-yellow-300" : "bg-white hover:bg-yellow-50"
                 }`}
               >
-                {t}
+                All Topics
               </button>
-            ))}
-          </div>
-        )}
-      </div>
+              {topics.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTopicFilter(t)}
+                  className={`px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-lg transition-all ${
+                    topicFilter === t ? "bg-yellow-300" : "bg-white hover:bg-yellow-50"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-      {/* Grid or Empty/Loading State */}
+        {/* Search & Sort Bar */}
+        <div className="mt-8 flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title, topics, or keywords..."
+              className="w-full pl-12 pr-4 py-3 bg-white wobbly-border-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 font-hand text-xl text-slate-800 placeholder:text-slate-400"
+            />
+          </div>
+
+          <div className="flex gap-4">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-3 bg-white wobbly-border-sm focus:outline-none font-bold font-hand text-lg text-slate-800"
+            >
+              <option value="newest">Sort by: Newest</option>
+              <option value="oldest">Sort by: Oldest</option>
+              <option value="most_studied">Most Studied</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Grid */}
       {loading ? (
-        <div className="py-20 text-center space-y-3">
-          <RefreshCw className="w-6 h-6 text-accent-sky animate-spin mx-auto" />
-          <p className="text-xs text-text-secondary">Loading your study sets...</p>
+        <div className="py-20 text-center space-y-4">
+          <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">
+            <Sparkles className="w-6 h-6 text-slate-800" />
+          </div>
+          <p className="text-xl font-hand text-slate-600">Loading your handwritten decks...</p>
         </div>
       ) : error ? (
-        <Card className="text-center py-12 border-rose-500/30 bg-rose-950/20 space-y-3">
-          <p className="text-sm text-rose-200">Failed to load study library: {error}</p>
-          <button
-            onClick={fetchSets}
-            className="px-3 py-1.5 rounded-lg text-xs bg-surface border border-border-subtle text-text-primary"
-          >
-            Retry
-          </button>
-        </Card>
-      ) : filteredSets.length === 0 ? (
-        <Card className="text-center py-16 space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-surface border border-border-subtle mx-auto flex items-center justify-center text-text-tertiary">
-            <Sparkles className="w-6 h-6 text-accent-amber" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-text-primary tracking-tight">
-              {search || topicFilter !== "all"
-                ? "No matching study sets found"
-                : "Your study library is empty"}
-            </h3>
-            <p className="text-xs text-text-secondary max-w-sm mx-auto">
-              {search || topicFilter !== "all"
-                ? "Try adjusting your search terms or filters."
-                : "Paste notes or upload a PDF on the Generate page to create your first interactive study set."}
-            </p>
-          </div>
-          <div>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-accent-sky text-black hover:opacity-90 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Generate Your First Set
-            </Link>
-          </div>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredSets.map((set) => (
-            <StudySetCard key={set.id} set={set} onDelete={handleDelete} />
-          ))}
+        <div className="bg-rose-50 p-8 wobbly-border-sm hard-shadow-sm text-center">
+          <p className="text-xl font-hand text-rose-700">{error}</p>
         </div>
+      ) : (
+        <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+          {filteredSets.map((set, idx) => (
+            <StudySetCard
+              key={set.id}
+              set={set}
+              onDelete={handleDelete}
+              rotation={cardRotations[idx % cardRotations.length]}
+            />
+          ))}
+
+          {/* New Study Set Card */}
+          <div className="bg-white p-6 wobbly-border-sm hard-shadow-sm card-3d-hover -rotate-1 group border-dashed opacity-90 flex flex-col items-center justify-center text-center min-h-[320px]">
+            <div className="flex items-center justify-center flex-col text-center p-4">
+              <PlusCircle className="w-12 h-12 text-slate-400 mb-3 animate-bounce" />
+              <h3 className="text-2xl font-bold font-hand text-slate-800">New Study Set</h3>
+              <p className="text-slate-500 font-hand text-lg mb-6">
+                Transform more notes or lecture slides into study gold!
+              </p>
+              <Link
+                href="/"
+                className="px-6 py-2.5 border-2 border-slate-800 font-bold font-hand text-lg uppercase tracking-wider hover:bg-slate-800 hover:text-white transition-all rounded-lg"
+              >
+                Start Generating
+              </Link>
+            </div>
+          </div>
+        </main>
       )}
+
+      {/* Bottom Inspiration Banner */}
+      <section className="bg-yellow-50/70 p-10 md:p-12 wobbly-border hard-shadow text-center relative overflow-hidden">
+        <Notebook className="absolute -top-8 -left-8 w-44 h-44 text-yellow-200/50 -rotate-12 pointer-events-none" />
+        <h2 className="text-3xl md:text-4xl font-bold mb-3 font-hand text-slate-900">
+          The more notes you feed our AI assistant, the stronger your mastery becomes.
+        </h2>
+        <p className="text-xl text-slate-600 mb-8 max-w-xl mx-auto font-hand">
+          Ready to turn that messy PDF, syllabus, or lecture transcript into a flawless interactive study deck?
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-3 bg-yellow-400 px-8 py-3.5 text-2xl font-bold font-hand wobbly-border-sm hard-shadow-sm hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-900"
+        >
+          Generate New Set <Sparkles className="w-6 h-6" />
+        </Link>
+      </section>
     </div>
   );
 }

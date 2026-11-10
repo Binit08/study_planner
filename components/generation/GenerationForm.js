@@ -13,11 +13,11 @@ import {
   ArrowRight,
   Sliders,
   CheckCircle2,
-  Clock,
   Check,
+  BrainCircuit,
+  Wand2,
+  Info,
 } from "lucide-react";
-import Card from "@/components/ui/Card";
-import Badge from "@/components/ui/Badge";
 
 export default function GenerationForm({
   onGenerate,
@@ -28,7 +28,7 @@ export default function GenerationForm({
 }) {
   const [inputText, setInputText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
-  const [mode, setMode] = useState("both"); // "both" | "flashcards" | "quiz"
+  const [mode, setMode] = useState("both"); // "both" | "cards" | "quiz"
   const [itemCount, setItemCount] = useState(6);
   const [validationError, setValidationError] = useState(null);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -38,27 +38,26 @@ export default function GenerationForm({
   const sampleTopics = [
     {
       title: "Operating Systems",
-      desc: "Virtual Memory, Page Replacement, and Thrashing algorithms.",
+      desc: "Virtual Memory, Page Replacement, & Thrashing algorithms.",
       text: "Virtual memory creates an illusion of large contiguous memory by paging between RAM and secondary storage. Key algorithms include FIFO, LRU (Least Recently Used), and Clock algorithm. Thrashing occurs when page fault overhead exceeds useful CPU execution.",
     },
     {
       title: "Distributed Systems",
-      desc: "CAP Theorem, Consistency Guarantees, and Partition Tolerance.",
+      desc: "CAP Theorem, Consistency Guarantees, & Partition Tolerance.",
       text: "The CAP theorem states that a distributed data store can simultaneously provide at most two out of three guarantees: Consistency (all nodes see the same data at the same time), Availability (every request receives a non-error response), and Partition Tolerance (the system continues to operate despite network drops). In the presence of a network partition, a system must choose between Consistency (CP) or Availability (AP). Eventual consistency models allow replicas to converge over time without strict real-time synchronization.",
     },
     {
       title: "Cell Biology",
-      desc: "Mitochondria, Glycolysis, Krebs Cycle, and ATP Synthase.",
+      desc: "Mitochondria, Glycolysis, Krebs Cycle, & ATP Synthase.",
       text: "Cellular respiration converts biochemical energy from nutrients into adenosine triphosphate (ATP). The four main stages are Glycolysis (in the cytoplasm), the Transition Step, the Citric Acid (Krebs) Cycle in the mitochondrial matrix, and Oxidative Phosphorylation along the inner mitochondrial cristae via the electron transport chain and ATP synthase.",
     },
   ];
 
-  // Dynamic step progression for loader
   const loadingSteps = [
-    "Analyzing source material & syllabus structure...",
-    "Extracting conceptual knowledge graphs with Google Gemini...",
-    "Synthesizing active-recall cards & multiple-choice distractors...",
-    "Validating structured Zod schemas & finalizing UI payload...",
+    "Skimming & parsing raw notes / PDF stream...",
+    "Extracting key concepts & knowledge graphs...",
+    "Formulating flashcards, distractors & explanations...",
+    "Validating structured Zod schemas...",
   ];
 
   useEffect(() => {
@@ -103,315 +102,334 @@ export default function GenerationForm({
     onGenerate({
       text: trimmed,
       file: selectedFile,
-      mode,
+      mode: mode === "cards" ? "flashcards" : mode,
       targetCount: itemCount,
     });
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6">
-      {/* Input Box Card */}
-      <Card className="border-border-subtle/80 bg-surface/50 backdrop-blur-xl relative overflow-hidden">
-        {/* Subtle top ambient glow */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent-sky/30 to-transparent" />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Form Card (7 cols) */}
+      <div className="lg:col-span-7">
+        <div
+          className={`bg-white p-6 sm:p-8 relative transition-all duration-300 wobbly-border hard-shadow tape-effect ${
+            isLoading ? "opacity-60 pointer-events-none" : ""
+          }`}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 1. Feed me your notes */}
+            <div>
+              <label className="block text-2xl font-bold font-hand mb-2 text-[#2d2d2d]">
+                1. Feed me your notes...
+              </label>
+              <textarea
+                value={inputText}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  if (validationError) setValidationError(null);
+                }}
+                disabled={isLoading}
+                placeholder={
+                  selectedFile
+                    ? "Optional: Add specific focus points or syllabus chapters to extract from the PDF..."
+                    : "Paste syllabus, lecture transcripts, or just a topic like 'Photosynthesis' or 'DSA'..."
+                }
+                rows={selectedFile ? 3 : 5}
+                className="w-full p-4 text-xl bg-yellow-50/40 border-2 border-dashed border-slate-400 focus:border-slate-800 focus:outline-none transition-all focus:ring-4 focus:ring-yellow-200/50 rounded-2xl font-normal leading-relaxed text-[#2d2d2d] placeholder:text-slate-400"
+              />
+              <div className="flex justify-between items-center mt-2 text-slate-500 text-base">
+                <span className="flex items-center gap-1">
+                  <Info className="w-4 h-4 text-slate-400" />
+                  {selectedFile ? "PDF attached — notes above will guide focus" : "Paste notes or type any syllabus topic"}
+                </span>
+                <span className="font-bold font-mono">{inputText.length} chars</span>
+              </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Header row with source indicator */}
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold tracking-wide uppercase text-text-secondary flex items-center gap-2">
-              <FileText className="w-4 h-4 text-accent-blue" />
-              {selectedFile ? "Focus Notes or Topic Instructions" : "Source Material, Notes or Topic"}
-            </label>
-            <span className="text-xs text-text-tertiary font-mono">
-              {inputText.length > 0 ? `${inputText.length} chars` : selectedFile ? "Optional focus notes" : "Paste text or upload PDF"}
-            </span>
-          </div>
+              {validationError && (
+                <div className="mt-3 p-2.5 border-2 border-dashed border-red-400 bg-red-50 text-red-600 text-base font-bold rounded-xl flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span>{validationError}</span>
+                </div>
+              )}
+            </div>
 
-          {/* Text Area */}
-          <textarea
-            value={inputText}
-            onChange={(e) => {
-              setInputText(e.target.value);
-              if (validationError) setValidationError(null);
-            }}
-            disabled={isLoading}
-            placeholder={
-              selectedFile
-                ? "Optional: Add specific focus instructions or syllabus chapters to extract from the attached PDF..."
-                : "Enter a topic (e.g., DSA, Operating Systems, Cell Biology) or paste lecture notes here..."
-            }
-            rows={selectedFile ? 3 : 5}
-            className="w-full rounded-xl bg-canvas/80 border border-border-subtle p-3.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-sky/50 focus:ring-1 focus:ring-accent-sky/30 transition-all resize-y leading-relaxed"
-          />
+            {/* 2. Or drop a PDF & 3. Format & Size */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* PDF Drop */}
+              <div>
+                <label className="block text-xl font-bold font-hand mb-2 text-[#2d2d2d]">
+                  2. Or drop a PDF
+                </label>
+                <div className="border-2 border-dashed border-slate-300 p-4 rounded-xl text-center hover:bg-slate-50 transition-colors cursor-pointer relative overflow-hidden min-h-[110px] flex flex-col items-center justify-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                    id="pdf-upload"
+                  />
+                  <Upload className="w-7 h-7 text-slate-400 mb-1" />
+                  <p className="text-slate-600 text-sm font-bold">Click to upload lecture PDF</p>
+                  <p className="text-[11px] text-slate-400">PDF text parsed on server</p>
 
-          {validationError && (
-            <p className="text-xs text-rose-400 flex items-center gap-1.5 animate-fade-in">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              {validationError}
-            </p>
-          )}
-
-          {/* Attached PDF Banner if file selected */}
-          {selectedFile && (
-            <div className="p-3 rounded-xl bg-accent-blue/10 border border-accent-blue/30 flex items-center justify-between gap-3 animate-fade-in">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <FileText className="w-4 h-4 text-accent-sky flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-text-primary truncate">
-                    Attached: {selectedFile.name}
-                  </p>
-                  <p className="text-[10px] text-text-tertiary">
-                    {(selectedFile.size / 1024).toFixed(0)} KB &bull; PDF document will be parsed as primary knowledge source
-                  </p>
+                  {selectedFile && (
+                    <div className="absolute inset-0 bg-green-50 z-10 flex items-center justify-between px-3 border-2 border-green-400 rounded-xl">
+                      <div className="flex items-center gap-2 text-left truncate mr-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-green-800 truncate">{selectedFile.name}</p>
+                          <p className="text-[10px] text-green-600">{(selectedFile.size / 1024).toFixed(0)} KB ready</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFile();
+                        }}
+                        className="p-1 text-slate-400 hover:text-red-500 z-30"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={handleRemoveFile}
-                className="text-text-tertiary hover:text-rose-400 p-1 rounded-md transition-colors"
-                title="Remove attached PDF"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
 
-          {/* Configuration Grid: Mode & Quantity */}
-          <div className="pt-4 border-t border-border-subtle/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Format Selection */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-semibold tracking-wider uppercase text-text-tertiary">
-                Format
-              </span>
-              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-canvas/80 border border-border-subtle">
-                <button
-                  type="button"
-                  onClick={() => setMode("both")}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    mode === "both"
-                      ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold shadow-sm"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  }`}
-                >
-                  <Sparkles className="w-3 h-3 text-accent-amber" />
-                  Both
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("flashcards")}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    mode === "flashcards"
-                      ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold shadow-sm"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  }`}
-                >
-                  <Layers className="w-3 h-3 text-accent-blue" />
-                  Cards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("quiz")}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    mode === "quiz"
-                      ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold shadow-sm"
-                      : "text-text-tertiary hover:text-text-secondary"
-                  }`}
-                >
-                  <BookOpen className="w-3 h-3 text-accent-yellow" />
-                  Quiz
-                </button>
+              {/* Format & Size */}
+              <div>
+                <label className="block text-xl font-bold font-hand mb-2 text-[#2d2d2d]">
+                  3. Format & Size
+                </label>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setMode("both")}
+                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold rotate-1 transition-all ${
+                      mode === "both"
+                        ? "border-[#2d2d2d] bg-yellow-200 hard-shadow-sm"
+                        : "border-slate-300 bg-white hover:bg-yellow-50"
+                    }`}
+                  >
+                    Both
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("cards")}
+                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold -rotate-1 transition-all ${
+                      mode === "cards"
+                        ? "border-[#2d2d2d] bg-yellow-200 hard-shadow-sm"
+                        : "border-slate-300 bg-white hover:bg-yellow-50"
+                    }`}
+                  >
+                    Cards
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("quiz")}
+                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold rotate-2 transition-all ${
+                      mode === "quiz"
+                        ? "border-[#2d2d2d] bg-yellow-200 hard-shadow-sm"
+                        : "border-slate-300 bg-white hover:bg-yellow-50"
+                    }`}
+                  >
+                    Quiz
+                  </button>
+                </div>
+
+                <div className="flex justify-between items-center bg-slate-100 p-2 rounded-lg border border-slate-200">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600 font-mono">
+                    Quantity:
+                  </span>
+                  <div className="flex gap-3 text-lg font-hand">
+                    {[4, 6, 10].map((num) => (
+                      <span
+                        key={num}
+                        onClick={() => setItemCount(num)}
+                        className={`cursor-pointer px-1.5 py-0.5 rounded transition-colors ${
+                          itemCount === num
+                            ? "font-bold text-yellow-800 underline decoration-wavy decoration-yellow-500 bg-yellow-200"
+                            : "hover:text-yellow-600 text-slate-600"
+                        }`}
+                      >
+                        {num}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs mt-1 text-slate-400 text-center italic">
+                  {mode === "both"
+                    ? `${itemCount} cards + ${itemCount} questions`
+                    : `${itemCount} items per set`}
+                </p>
               </div>
             </div>
 
-            {/* Quantity Selector with Clear Explanatory Label */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-semibold tracking-wider uppercase text-text-tertiary flex items-center justify-between">
-                <span>Items Per Format</span>
-                <span className="font-mono text-text-secondary">
-                  {mode === "both" ? `${itemCount} cards + ${itemCount} questions` : `${itemCount} items`}
+            {/* Submit Action */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 bg-yellow-400 text-2xl font-bold py-4 px-6 font-hand transition-all hover:bg-yellow-300 flex items-center justify-center gap-2 active:translate-x-1 active:translate-y-1 wobbly-border-sm hard-shadow-sm btn-press cursor-pointer"
+              >
+                <span>Generate Study Assistant</span>
+                <Wand2 className="w-6 h-6 text-[#2d2d2d]" />
+              </button>
+
+              {isLoading && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="px-6 py-2 text-slate-500 hover:text-red-500 font-bold transition-colors font-hand text-xl"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+
+            {/* Error Message */}
+            {error && !isLoading && (
+              <div className="mt-4 p-4 border-2 border-dashed border-red-400 bg-red-50 text-red-600 rounded-xl text-base flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="font-bold">Generation failed</p>
+                  <p className="text-sm text-red-500">{error}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="px-3 py-1 bg-white border border-red-400 rounded-lg text-xs font-bold text-red-600 hover:bg-red-100 flex items-center gap-1"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Retry
+                </button>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+
+      {/* Right Column (5 cols): Stepper / Expected Output */}
+      <div className="lg:col-span-5 relative">
+        {isLoading ? (
+          /* Active Loading Stepper */
+          <div className="sticky top-8 bg-white p-7 wobbly-border hard-shadow-sm -rotate-1 animate-fade-in space-y-6">
+            <div className="flex justify-between items-start">
+              <div className="w-14 h-14 border-4 border-slate-800 border-t-yellow-400 rounded-full flex items-center justify-center animate-spin">
+                <BrainCircuit className="w-7 h-7 text-[#2d2d2d]" />
+              </div>
+              <div className="text-right">
+                <span className="text-xs uppercase tracking-widest text-slate-400 font-bold font-mono">
+                  Elapsed
                 </span>
-              </span>
-              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-canvas/80 border border-border-subtle">
-                {[4, 6, 10].map((num) => (
+                <p className="text-2xl font-bold font-mono text-yellow-600">{elapsedSeconds}s</p>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-bold font-hand text-[#2d2d2d]">
+                Crafting your wisdom...
+              </h2>
+              <p className="text-base text-slate-600">
+                Gemini 2.5 is synthesizing rigorous study materials.
+              </p>
+            </div>
+
+            {/* Stepper list with dashed vertical connector */}
+            <div className="space-y-5 relative">
+              <div className="stepper-line" />
+              {loadingSteps.map((step, idx) => {
+                const isPast = idx < loadingStep;
+                const isCurrent = idx === loadingStep;
+                return (
+                  <div key={idx} className="flex items-center gap-3 relative z-10">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                        isPast
+                          ? "bg-green-400 border-[#2d2d2d] text-[#2d2d2d]"
+                          : isCurrent
+                          ? "bg-yellow-300 border-[#2d2d2d] text-[#2d2d2d] animate-bounce"
+                          : "bg-white border-slate-300 text-slate-400"
+                      }`}
+                    >
+                      {isPast ? <Check className="w-4 h-4" /> : idx + 1}
+                    </div>
+                    <span
+                      className={`text-base font-hand ${
+                        isCurrent
+                          ? "font-bold text-[#2d2d2d]"
+                          : isPast
+                          ? "text-slate-600 line-through"
+                          : "text-slate-400"
+                      }`}
+                    >
+                      {step}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="p-3 bg-yellow-50 rounded-xl border border-dashed border-yellow-300 text-xs italic text-slate-500">
+              Tip: Press Space anytime on flashcards to flip them physically in 3D!
+            </div>
+          </div>
+        ) : (
+          /* Expected Output & Sample Topics */
+          <div className="space-y-6">
+            <div className="bg-white p-6 wobbly-border-sm hard-shadow-sm rotate-1">
+              <h3 className="text-2xl font-bold font-hand mb-3 text-[#2d2d2d]">
+                Expected Output 🎯
+              </h3>
+              <p className="text-base text-slate-600 leading-relaxed mb-4">
+                Google Gemini will synthesize structured knowledge graphs with zero chat hallucination:
+              </p>
+              <ul className="space-y-2 text-base text-slate-700">
+                <li className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-yellow-200 border border-[#2d2d2d] flex items-center justify-center text-xs font-bold">✓</span>
+                  <span>{itemCount} active-recall 3D flashcards with clues</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-yellow-200 border border-[#2d2d2d] flex items-center justify-center text-xs font-bold">✓</span>
+                  <span>{itemCount} four-option auto-graded questions with explanations</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-yellow-200 border border-[#2d2d2d] flex items-center justify-center text-xs font-bold">✓</span>
+                  <span>Progressive milestone checklist with task tracker</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Quick Sample Topics */}
+            <div className="space-y-2.5">
+              <p className="text-lg font-bold font-hand text-slate-600">
+                Or test with a sample sketch:
+              </p>
+              <div className="space-y-2.5">
+                {sampleTopics.map((item, idx) => (
                   <button
-                    key={num}
+                    key={idx}
                     type="button"
-                    onClick={() => setItemCount(num)}
-                    className={`py-1.5 rounded-lg text-xs font-medium transition-all text-center ${
-                      itemCount === num
-                        ? "bg-accent-blue/20 text-accent-blue border border-accent-blue/40 font-semibold shadow-sm"
-                        : "text-text-tertiary hover:text-text-secondary"
-                    }`}
+                    onClick={() => {
+                      setInputText(item.text);
+                      setSelectedFile(null);
+                    }}
+                    className="w-full text-left p-3.5 bg-white wobbly-border-sm hard-shadow-sm hover:bg-yellow-50 transition-all group flex items-center justify-between"
                   >
-                    {num} items
+                    <div>
+                      <p className="text-lg font-bold font-hand text-[#2d2d2d] group-hover:text-yellow-700">
+                        {item.title}
+                      </p>
+                      <p className="text-sm text-slate-500 line-clamp-1">{item.desc}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 group-hover:text-yellow-600 transition-all flex-shrink-0" />
                   </button>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Action Row: PDF Attachment & Submit CTA */}
-          <div className="pt-4 border-t border-border-subtle/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={handleFileChange}
-                className="hidden"
-                id="pdf-upload"
-              />
-              <label
-                htmlFor="pdf-upload"
-                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium border cursor-pointer transition-all ${
-                  selectedFile
-                    ? "bg-accent-blue/15 border-accent-blue/40 text-accent-blue"
-                    : "bg-surface border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-translucent"
-                }`}
-              >
-                <Upload className="w-3.5 h-3.5" />
-                {selectedFile ? "Replace PDF Document" : "Attach PDF Document"}
-              </label>
-            </div>
-
-            {/* Action CTA */}
-            <div>
-              {isLoading ? (
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Cancel Generation
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-accent-amber/90 via-accent-sky/90 to-accent-blue/90 text-black hover:opacity-95 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
-                >
-                  <Sparkles className="w-4 h-4 text-black" />
-                  Generate Study Assistant
-                </button>
-              )}
-            </div>
-          </div>
-        </form>
-      </Card>
-
-      {/* Active Multi-Step Loading State */}
-      {isLoading && (
-        <Card className="border-accent-sky/30 bg-surface/70 backdrop-blur-xl shadow-glass animate-fade-in p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-accent-blue/15 border border-accent-blue/30 flex items-center justify-center">
-                <RefreshCw className="w-4.5 h-4.5 text-accent-sky animate-spin" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-text-primary tracking-tight">
-                  Synthesizing with Google Gemini
-                </p>
-                <p className="text-xs text-text-secondary font-mono">
-                  Elapsed: {elapsedSeconds}s &bull; Mode: {mode.toUpperCase()} ({itemCount} items)
-                </p>
-              </div>
-            </div>
-            <Badge variant="accent" size="xs">
-              Gemini 2.5 Active
-            </Badge>
-          </div>
-
-          {/* Stepper Indicator */}
-          <div className="space-y-2 pt-2 border-t border-border-subtle/60">
-            {loadingSteps.map((step, idx) => {
-              const isPast = idx < loadingStep;
-              const isCurrent = idx === loadingStep;
-              return (
-                <div
-                  key={idx}
-                  className={`flex items-center gap-2.5 text-xs transition-colors ${
-                    isCurrent
-                      ? "text-accent-sky font-medium"
-                      : isPast
-                      ? "text-emerald-400/80"
-                      : "text-text-tertiary opacity-40"
-                  }`}
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-mono border ${
-                      isCurrent
-                        ? "border-accent-sky bg-accent-sky/20 animate-pulse"
-                        : isPast
-                        ? "border-emerald-500/50 bg-emerald-500/20"
-                        : "border-border-subtle bg-surface"
-                    }`}
-                  >
-                    {isPast ? <Check className="w-2.5 h-2.5" /> : idx + 1}
-                  </div>
-                  <span>{step}</span>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-      )}
-
-      {/* Error State with Retry Button */}
-      {error && !isLoading && (
-        <Card className="border-rose-500/40 bg-rose-950/20 backdrop-blur-xl animate-fade-in">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-rose-200">AI Generation Failed</p>
-                <p className="text-xs text-rose-300/80 leading-relaxed">{error}</p>
-              </div>
-            </div>
-            <button
-              onClick={onRetry}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-rose-500/20 text-rose-200 border border-rose-500/30 hover:bg-rose-500/30 transition-all"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Retry
-            </button>
-          </div>
-        </Card>
-      )}
-
-      {/* Quick Start Topics with Equal Height Alignment */}
-      {!isLoading && (
-        <div className="space-y-2.5">
-          <p className="text-xs font-medium text-text-tertiary uppercase tracking-wider">
-            Or test with a sample topic:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
-            {sampleTopics.map((item, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  setInputText(item.text);
-                  setSelectedFile(null);
-                }}
-                className="text-left p-3.5 rounded-xl border border-border-subtle bg-surface-translucent hover:bg-surface hover:border-border-translucent transition-all group flex flex-col justify-between h-full min-h-[100px]"
-              >
-                <div>
-                  <p className="text-xs font-semibold text-text-primary group-hover:text-accent-blue transition-colors flex items-center justify-between">
-                    <span>{item.title}</span>
-                    <ArrowRight className="w-3 h-3 text-text-tertiary group-hover:text-accent-blue transition-transform group-hover:translate-x-0.5" />
-                  </p>
-                  <p className="text-[11px] text-text-secondary mt-1.5 leading-relaxed line-clamp-2">
-                    {item.desc}
-                  </p>
-                </div>
-                <div className="pt-2 text-[10px] text-accent-sky/70 font-mono">
-                  Click to load &rarr;
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

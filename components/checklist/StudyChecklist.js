@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckSquare, Square, Plus, Trash2, CheckCircle2 } from "lucide-react";
-import Card from "@/components/ui/Card";
-import Badge from "@/components/ui/Badge";
+import { CheckSquare, Square, Plus, Trash2, CheckCircle2, Sparkles } from "lucide-react";
 
 export default function StudyChecklist({
   items = [],
@@ -25,36 +23,42 @@ export default function StudyChecklist({
   const percentage = items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;
 
   return (
-    <Card className="bg-surface/50 backdrop-blur-xl border-border-subtle p-5 space-y-4">
-      <div className="flex items-center justify-between border-b border-border-subtle pb-3">
+    <div className="bg-white p-6 md:p-8 wobbly-border-sm hard-shadow-sm space-y-6 relative rotate-[-0.5deg]">
+      {/* Tape effect at the top */}
+      <div className="tape-effect" />
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-dashed border-slate-200 pb-4">
         <div className="flex items-center gap-2">
-          <CheckSquare className="w-4 h-4 text-accent-sky" />
-          <h3 className="text-sm font-semibold text-text-primary tracking-tight">{title}</h3>
+          <div className="w-8 h-8 bg-yellow-300 flex items-center justify-center rounded-lg border border-slate-800">
+            <CheckSquare className="w-5 h-5 text-slate-800" />
+          </div>
+          <h3 className="text-2xl font-bold font-hand text-slate-900 tracking-tight">{title}</h3>
         </div>
-        <Badge variant={percentage === 100 ? "mastered" : "accent"} size="xs">
+        <div className="inline-block px-3 py-1 bg-yellow-100 wobbly-border-sm text-sm font-bold self-start sm:self-auto">
           {completedCount} / {items.length} Done ({percentage}%)
-        </Badge>
+        </div>
       </div>
 
-      {/* Progress Line */}
-      <div className="w-full h-1 bg-surface rounded-full overflow-hidden">
+      {/* Progress Bar */}
+      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-800">
         <div
-          className="h-full bg-accent-sky transition-all duration-300"
+          className="h-full bg-yellow-400 transition-all duration-300"
           style={{ width: `${percentage}%` }}
         />
       </div>
 
       {/* Items List */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((item, idx) => {
           const itemId = item.id || idx;
           return (
             <div
               key={itemId}
-              className={`p-2.5 rounded-lg border transition-all flex items-center justify-between gap-3 ${
+              className={`p-3.5 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${
                 item.completed
-                  ? "bg-surface/30 border-border-subtle/50 text-text-tertiary"
-                  : "bg-surface-translucent border-border-subtle text-text-primary hover:border-border-translucent"
+                  ? "bg-slate-50 border-slate-200 text-slate-400"
+                  : "bg-white border-slate-800 text-slate-800 hover:bg-yellow-50/50"
               }`}
             >
               <button
@@ -63,13 +67,13 @@ export default function StudyChecklist({
                 className="flex items-center gap-3 text-left flex-1 group"
               >
                 {item.completed ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                 ) : (
-                  <Square className="w-4 h-4 text-text-tertiary group-hover:text-accent-sky flex-shrink-0" />
+                  <Square className="w-5 h-5 text-slate-400 group-hover:text-yellow-600 flex-shrink-0" />
                 )}
                 <span
-                  className={`text-xs leading-relaxed ${
-                    item.completed ? "line-through text-text-tertiary" : "text-text-primary"
+                  className={`text-lg font-hand leading-relaxed ${
+                    item.completed ? "line-through text-slate-400" : "text-slate-800 font-semibold"
                   }`}
                 >
                   {item.task}
@@ -80,9 +84,10 @@ export default function StudyChecklist({
                 <button
                   type="button"
                   onClick={() => onDeleteItem(itemId)}
-                  className="text-text-tertiary hover:text-rose-400 p-1 opacity-60 hover:opacity-100 transition-opacity"
+                  className="text-slate-300 hover:text-red-500 p-1.5 transition-colors"
+                  title="Remove goal"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               )}
             </div>
@@ -90,32 +95,34 @@ export default function StudyChecklist({
         })}
 
         {items.length === 0 && (
-          <p className="text-center text-xs text-text-tertiary py-4">
-            No milestones added yet. Add a study step below.
-          </p>
+          <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
+            <p className="text-slate-400 font-hand text-lg">
+              No checkpoints added yet. Add your first study goal below!
+            </p>
+          </div>
         )}
       </div>
 
       {/* Add New Task Form */}
       {onAddItem && (
-        <form onSubmit={handleAdd} className="flex items-center gap-2 pt-2 border-t border-border-subtle/60">
+        <form onSubmit={handleAdd} className="flex items-center gap-3 pt-4 border-t-2 border-dashed border-slate-200">
           <input
             type="text"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             placeholder="Add new study goal or checkpoint..."
-            className="flex-1 text-xs rounded-lg bg-canvas border border-border-subtle px-3 py-2 text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-sky/50"
+            className="flex-1 px-4 py-2.5 bg-white wobbly-border-sm font-hand text-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <button
             type="submit"
             disabled={!newTask.trim()}
-            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium bg-surface text-text-primary border border-border-subtle hover:bg-surface-hover disabled:opacity-40 transition-all"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-yellow-400 text-slate-900 font-bold font-hand text-lg wobbly-border-sm hard-shadow-sm hover:bg-yellow-300 disabled:opacity-40 transition-all"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Add
+            <Plus className="w-4 h-4" />
+            Add Goal
           </button>
         </form>
       )}
-    </Card>
+    </div>
   );
 }

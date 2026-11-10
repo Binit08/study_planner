@@ -2,58 +2,68 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, Layers, CheckSquare, History, BookOpen } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/", label: "Generate", icon: Sparkles },
-    { href: "/flashcards", label: "Flashcards", icon: Layers },
-    { href: "/quizzes", label: "Quizzes", icon: BookOpen },
-    { href: "/history", label: "Library", icon: History },
+    { href: "/", id: "generate", label: "Generate" },
+    { href: "/flashcards", id: "flashcards", label: "Flashcards" },
+    { href: "/quizzes", id: "quizzes", label: "Quizzes" },
+    { href: "/history", id: "library", label: "Library" },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border-subtle/80 bg-canvas/75 backdrop-blur-xl">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center border border-border-translucent shadow-sm group-hover:border-accent-sky/50 transition-colors">
-            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-accent-yellow via-accent-amber to-accent-blue animate-pulse" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm tracking-tight text-text-primary flex items-center gap-1.5">
-              Flam Study
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-surface border border-border-subtle text-accent-blue">
-                Gemini
-              </span>
-            </span>
-          </div>
-        </Link>
+    <nav className="flex justify-between items-center mb-10 relative select-none">
+      {/* Brand Logo */}
+      <Link href="/" className="flex items-center gap-2 -rotate-1 group transition-transform hover:scale-105">
+        <div
+          className="w-10 h-10 bg-yellow-300 flex items-center justify-center rotate-3 border-2 border-[#2d2d2d] hard-shadow-sm transition-transform group-hover:rotate-6"
+          style={{ borderRadius: "15px 125px 25px 145px / 135px 25px 155px 35px" }}
+        >
+          <Sparkles className="w-5 h-5 text-[#2d2d2d]" />
+        </div>
+        <span className="text-3xl font-bold tracking-tight font-hand text-[#2d2d2d]">
+          StudyGold
+        </span>
+      </Link>
 
-        {/* Navigation Links */}
-        <nav className="flex items-center gap-1 sm:gap-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
+      {/* Navigation Links */}
+      <div className="flex gap-4 sm:gap-6 items-center text-lg sm:text-xl font-hand">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          const isLibrary = item.id === "library";
+
+          if (isLibrary) {
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-surface-hover text-text-primary border border-border-translucent shadow-sm"
-                    : "text-text-secondary hover:text-text-primary hover:bg-surface-translucent"
+                className={`px-4 py-1 bg-white border-2 border-[#2d2d2d] wobbly-border-sm hard-shadow-sm font-bold transition-all hover:bg-yellow-50 hover:translate-x-0.5 hover:translate-y-0.5 ${
+                  isActive ? "bg-yellow-200 text-yellow-800" : "text-[#2d2d2d]"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-accent-blue" : "text-text-tertiary"}`} />
-                <span>{item.label}</span>
+                {item.label}
               </Link>
             );
-          })}
-        </nav>
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`hover:text-yellow-600 transition-all font-bold pb-0.5 ${
+                isActive
+                  ? "text-yellow-600 border-b-2 border-dashed border-[#2d2d2d]"
+                  : "text-[#2d2d2d] border-b-2 border-transparent hover:border-dashed hover:border-[#2d2d2d]"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
-    </header>
+    </nav>
   );
 }
