@@ -13,6 +13,9 @@ import {
   Sparkles,
   Calendar,
   Trash2,
+  Download,
+  Copy,
+  Check,
 } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -32,6 +35,7 @@ export default function StudySetDetailPage() {
   const [progressMap, setProgressMap] = useState({});
   const [attempts, setAttempts] = useState([]);
   const [checklist, setChecklist] = useState([]);
+  const [copiedMd, setCopiedMd] = useState(false);
 
   const loadData = async () => {
     if (!id) return;
@@ -146,6 +150,66 @@ export default function StudySetDetailPage() {
     }
   };
 
+  const handleExportAnki = () => {
+    if (!flashcards || flashcards.length === 0) return;
+    const rows = [
+      "#separator:comma",
+      "#html:false",
+      ...flashcards.map((c) => {
+        const front = `"${(c.front || "").replace(/"/g, '""')}"`;
+        const back = `"${(c.back || "").replace(/"/g, '""')}"`;
+        return `${front},${back}`;
+      }),
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join("\n"));
+    const link = document.createElement("a");
+    link.setAttribute("href", csvContent);
+    const filename = `${(studySet?.title || "study-set").toLowerCase().replace(/[^a-z0-9]/g, "-")}-anki.csv`;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCopyMarkdown = async () => {
+    let md = `# ${studySet?.title || "Study Set"}\nTopic: ${studySet?.topic || "General"}\n\n`;
+    if (studySet?.source_preview) md += `> ${studySet.source_preview}\n\n`;
+
+    if (flashcards.length > 0) {
+      md += `## 📚 Flashcards (${flashcards.length})\n\n`;
+      flashcards.forEach((card, idx) => {
+        md += `### Card ${idx + 1}\n**Q:** ${card.front}\n**A:** ${card.back}\n\n`;
+      });
+    }
+
+    if (quiz.length > 0) {
+      md += `## 📝 Quiz Assessment (${quiz.length} Questions)\n\n`;
+      quiz.forEach((q, idx) => {
+        md += `### Q${idx + 1}: ${q.question}\n`;
+        q.options.forEach((opt, oIdx) => {
+          const isCorrect = oIdx === q.correctAnswerIndex;
+          md += `- [${isCorrect ? "x" : " "}] ${opt}${isCorrect ? " *(Correct)*" : ""}\n`;
+        });
+        if (q.explanation) md += `\n*Explanation:* ${q.explanation}\n\n`;
+      });
+    }
+
+    if (checklist.length > 0) {
+      md += `## ✅ Mastery Checklist\n\n`;
+      checklist.forEach((item) => {
+        md += `- [${item.completed ? "x" : " "}] ${item.task}\n`;
+      });
+    }
+
+    try {
+      await navigator.clipboard.writeText(md);
+      setCopiedMd(true);
+      setTimeout(() => setCopiedMd(false), 2200);
+    } catch {
+      alert("Unable to copy to clipboard.");
+    }
+  };
+
   const handleDeleteSet = async () => {
     if (!window.confirm(`Are you sure you want to delete "${studySet?.title}"?`)) return;
     try {
@@ -196,13 +260,41 @@ export default function StudySetDetailPage() {
             Back to Library
           </Link>
 
-          <button
-            onClick={handleDeleteSet}
-            className="inline-flex items-center gap-1 text-xs text-text-tertiary hover:text-rose-400 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete Set
-          </button>
+          <div className="flex items-center gap-2">
+            {flashcards.length > 0 && (
+              <button
+                type="button"
+                onClick={handleExportAnki}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface text-text-secondary border border-border-subtle hover:text-text-primary hover:border-border-translucent transition-all"
+                title="Download standard 2-column Anki CSV file"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Anki CSV
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleCopyMarkdown}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                copiedMd
+                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                  : "bg-surface text-text-secondary border-border-subtle hover:text-text-primary hover:border-border-translucent"
+              }`}
+              title="Copy complete study set to clipboard as Markdown"
+            >
+              {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedMd ? "Copied!" : "Copy MD"}
+            </button>
+
+            <button
+              onClick={handleDeleteSet}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-text-tertiary hover:text-rose-400 hover:bg-rose-500/10 transition-colors border border-transparent hover:border-rose-500/20"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Set
+            </button>
+          </div>
         </div>
 
         <Card className="p-6 bg-surface/60 backdrop-blur-xl border-border-subtle relative overflow-hidden">

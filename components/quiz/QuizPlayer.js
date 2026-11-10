@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import FormattedContent from "@/components/ui/FormattedContent";
 
 export default function QuizPlayer({
   questions = [],
@@ -183,9 +184,9 @@ export default function QuizPlayer({
               <span className="text-xs text-text-tertiary">Single Choice</span>
             </div>
 
-            <p className="text-base sm:text-lg font-medium text-text-primary leading-relaxed">
-              {currentQ.question}
-            </p>
+            <div className="text-base sm:text-lg font-medium text-text-primary leading-relaxed">
+              <FormattedContent text={currentQ.question} />
+            </div>
           </Card>
 
           {/* Options List */}
@@ -212,7 +213,9 @@ export default function QuizPlayer({
                   >
                     {optIdx + 1}
                   </span>
-                  <span className="text-sm leading-relaxed flex-1">{option}</span>
+                  <div className="text-sm leading-relaxed flex-1">
+                    <FormattedContent text={option} />
+                  </div>
                 </button>
               );
             })}
@@ -372,16 +375,18 @@ export default function QuizPlayer({
                       return (
                         <div
                           key={optIdx}
-                          className={`px-3 py-2 rounded-lg text-xs border flex items-center justify-between ${styleClass}`}
+                          className={`px-3 py-2 rounded-lg text-xs border flex items-center justify-between gap-3 ${styleClass}`}
                         >
-                          <span>{opt}</span>
+                          <div className="flex-1">
+                            <FormattedContent text={opt} />
+                          </div>
                           {isOptionCorrect && (
-                            <span className="text-[10px] uppercase font-semibold tracking-wider text-emerald-400">
+                            <span className="text-[10px] uppercase font-semibold tracking-wider text-emerald-400 flex-shrink-0">
                               Correct Answer
                             </span>
                           )}
                           {isOptionSelected && !isOptionCorrect && (
-                            <span className="text-[10px] uppercase font-semibold tracking-wider text-rose-400">
+                            <span className="text-[10px] uppercase font-semibold tracking-wider text-rose-400 flex-shrink-0">
                               Your Choice
                             </span>
                           )}
@@ -394,9 +399,9 @@ export default function QuizPlayer({
                   {q.explanation && (
                     <div className="p-3 rounded-lg bg-surface/60 border border-border-subtle text-xs text-text-secondary leading-relaxed flex items-start gap-2">
                       <HelpCircle className="w-4 h-4 text-accent-sky flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-medium text-text-primary mr-1">Explanation:</span>
-                        {q.explanation}
+                      <div className="flex-1">
+                        <span className="font-semibold text-text-primary mr-1">Explanation:</span>
+                        <FormattedContent text={q.explanation} className="mt-1" />
                       </div>
                     </div>
                   )}

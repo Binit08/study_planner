@@ -17,6 +17,7 @@ export default function HomePage() {
     retry,
     cancel,
     reset,
+    setData,
   } = useGeneration();
 
   return (
@@ -52,8 +53,10 @@ export default function HomePage() {
         {data ? (
           <GenerationPreview
             data={data}
+            sourceMeta={sourceMeta}
             onRefine={refine}
             onReset={reset}
+            setData={setData}
             isLoading={isLoading}
           />
         ) : (
