@@ -17,13 +17,16 @@ export default function RootLayout({ children }) {
           <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
             {children}
           </main>
-          <footer className="w-full border-t border-border-subtle/60 py-8 text-center text-xs text-text-tertiary">
-            <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                Server-side Gemini Structured Output &bull; Supabase Postgres
+          <footer className="w-full border-t border-border-subtle/50 py-6 text-center text-xs text-text-tertiary">
+            <div className="max-w-6xl mx-auto px-4 flex items-center justify-center gap-3 flex-wrap text-[11px]">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface border border-border-subtle text-text-secondary font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Gemini 2.5 Structured Output
               </span>
-              <span>Flam AI Internship Engineering Demo</span>
+              <span>&bull;</span>
+              <span>Supabase Postgres</span>
+              <span>&bull;</span>
+              <span className="text-text-secondary">Flam Study Assistant</span>
             </div>
           </footer>
         </OrbBackground>

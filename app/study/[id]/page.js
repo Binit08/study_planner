@@ -318,35 +318,37 @@ export default function StudySetDetailPage() {
         </Card>
       </div>
 
-      {/* Active Tab View */}
+      {/* Active Tab View with State Preservation */}
       <div>
-        {activeTab === "flashcards" && (
-          <FlashcardViewer
-            cards={flashcards}
-            title={studySet.title}
-            progressMap={progressMap}
-            onUpdateProgress={handleUpdateCardProgress}
-          />
-        )}
-
-        {activeTab === "quiz" && (
-          <QuizPlayer
-            questions={quiz}
-            title={studySet.title}
-            onSubmitAttempt={handleSubmitQuizAttempt}
-          />
-        )}
-
-        {activeTab === "checklist" && (
-          <div className="max-w-2xl mx-auto">
-            <StudyChecklist
-              items={checklist}
-              onToggleItem={handleToggleChecklist}
-              onAddItem={handleAddChecklist}
-              onDeleteItem={handleDeleteChecklist}
+        {flashcards.length > 0 && (
+          <div className={activeTab === "flashcards" ? "block" : "hidden"}>
+            <FlashcardViewer
+              cards={flashcards}
+              title={studySet.title}
+              progressMap={progressMap}
+              onUpdateProgress={handleUpdateCardProgress}
             />
           </div>
         )}
+
+        {quiz.length > 0 && (
+          <div className={activeTab === "quiz" ? "block" : "hidden"}>
+            <QuizPlayer
+              questions={quiz}
+              title={studySet.title}
+              onSubmitAttempt={handleSubmitQuizAttempt}
+            />
+          </div>
+        )}
+
+        <div className={activeTab === "checklist" ? "block max-w-2xl mx-auto" : "hidden"}>
+          <StudyChecklist
+            items={checklist}
+            onToggleItem={handleToggleChecklist}
+            onAddItem={handleAddChecklist}
+            onDeleteItem={handleDeleteChecklist}
+          />
+        </div>
 
         {activeTab === "history" && (
           <div className="max-w-2xl mx-auto space-y-4">

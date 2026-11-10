@@ -127,15 +127,6 @@ export default function QuizPlayer({
     setScoreSummary(null);
   };
 
-  const handleRetestSingle = (question) => {
-    setActiveQuestions([question]);
-    setSelectedAnswers({});
-    setCurrentIndex(0);
-    setIsSubmitted(false);
-    setIsRetestingWrongOnly(true);
-    setScoreSummary(null);
-  };
-
   const handleResetFull = () => {
     setActiveQuestions(questions);
     setSelectedAnswers({});
@@ -161,19 +152,9 @@ export default function QuizPlayer({
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-text-primary tracking-tight">{title}</h2>
             {isRetestingWrongOnly && (
-              <div className="flex items-center gap-2">
-                <Badge variant="amber" size="xs">
-                  Re-testing ({activeQuestions.length})
-                </Badge>
-                <button
-                  type="button"
-                  onClick={handleResetFull}
-                  className="text-[11px] text-text-tertiary hover:text-accent-sky transition-colors flex items-center gap-1"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  Reset to All Questions
-                </button>
-              </div>
+              <Badge variant="amber" size="xs">
+                Re-testing Mistakes
+              </Badge>
             )}
           </div>
           <p className="text-xs text-text-tertiary">
@@ -419,58 +400,9 @@ export default function QuizPlayer({
                       </div>
                     </div>
                   )}
-
-                  {/* Individual Wrong Answer Re-test Option */}
-                  {!isCorrect && (
-                    <div className="flex items-center justify-between pt-2.5 border-t border-rose-500/20">
-                      <span className="text-[11px] text-rose-300 font-medium flex items-center gap-1.5">
-                        <XCircle className="w-3.5 h-3.5 text-rose-400" />
-                        Incorrect answer
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRetestSingle(q)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 active:scale-95 transition-all shadow-sm"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        Re-test this question
-                      </button>
-                    </div>
-                  )}
                 </Card>
               );
             })}
-
-            {/* Bottom Actions for Quick Re-testing */}
-            {scoreSummary.wrongQuestions.length > 0 && (
-              <div className="p-4 rounded-xl bg-surface/50 border border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-                <div>
-                  <p className="text-xs font-semibold text-text-primary">
-                    Ready to master your mistakes?
-                  </p>
-                  <p className="text-[11px] text-text-tertiary">
-                    Re-test the {scoreSummary.wrongQuestions.length} question{scoreSummary.wrongQuestions.length > 1 ? "s" : ""} you got wrong until 100% accuracy.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleRetestWrong}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 transition-all shadow-sm"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Re-test {scoreSummary.wrongQuestions.length} Mistake{scoreSummary.wrongQuestions.length > 1 ? "s" : ""}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleResetFull}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-surface border border-border-subtle text-text-secondary hover:text-text-primary hover:bg-surface-hover transition-all"
-                  >
-                    Retake All
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

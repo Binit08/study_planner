@@ -41,12 +41,20 @@ export async function POST(request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const pdfResult = await extractTextFromPdf(buffer);
-        text = pdfResult.text;
+        
+        // If user also provided text/notes, combine them so text acts as focus instructions
+        if (textInput && String(textInput).trim().length > 0) {
+          text = `PDF Document Content (${file.name}):\n${pdfResult.text}\n\nUser Focus Notes & Specific Syllabus Instructions:\n${String(textInput).trim()}`;
+        } else {
+          text = pdfResult.text;
+        }
+
         sourceMeta = {
           type: "pdf",
           name: file.name,
           pages: pdfResult.numpages,
           truncated: pdfResult.isTruncated,
+          hasUserNotes: Boolean(textInput && String(textInput).trim().length > 0),
         };
       } else if (textInput) {
         text = String(textInput).trim();

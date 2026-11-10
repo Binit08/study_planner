@@ -205,37 +205,37 @@ export default function GenerationPreview({
       {/* Refinement Loop */}
       <RefinementBar onRefine={onRefine} isLoading={isLoading} />
 
-      {/* Single Active Content View */}
+      {/* Single Active Content View with Tab State Preservation */}
       <div>
         {/* Flashcards View */}
-        {activeView === "flashcards" && flashcards.length > 0 && (
-          <section className="space-y-4 animate-fade-in">
+        {flashcards.length > 0 && (
+          <div className={activeView === "flashcards" ? "block space-y-4 animate-fade-in" : "hidden"}>
             <FlashcardViewer
               cards={flashcards}
               title={data.title}
               progressMap={progressMap}
               onUpdateProgress={handleUpdateProgress}
             />
-          </section>
+          </div>
         )}
 
-        {/* Quiz View */}
-        {activeView === "quiz" && quiz.length > 0 && (
-          <section className="space-y-4 animate-fade-in">
+        {/* Quiz View (State preserved across tab switches) */}
+        {quiz.length > 0 && (
+          <div className={activeView === "quiz" ? "block space-y-4 animate-fade-in" : "hidden"}>
             <QuizPlayer questions={quiz} title={data.title} />
-          </section>
+          </div>
         )}
 
         {/* Checklist View */}
-        {activeView === "checklist" && checklistItems.length > 0 && (
-          <section className="space-y-4 animate-fade-in">
+        {checklistItems.length > 0 && (
+          <div className={activeView === "checklist" ? "block space-y-4 animate-fade-in" : "hidden"}>
             <StudyChecklist
               items={checklistItems}
               onToggleItem={handleToggleChecklist}
               onAddItem={handleAddChecklist}
               onDeleteItem={handleDeleteChecklist}
             />
-          </section>
+          </div>
         )}
       </div>
     </div>
