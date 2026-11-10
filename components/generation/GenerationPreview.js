@@ -9,7 +9,6 @@ import {
   CheckSquare,
   Save,
   RotateCcw,
-  CheckCircle2,
   ExternalLink,
 } from "lucide-react";
 import Card from "@/components/ui/Card";
@@ -27,13 +26,25 @@ export default function GenerationPreview({
   isLoading,
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("all"); // "all" | "flashcards" | "quiz" | "checklist"
   const [isSaving, setIsSaving] = useState(false);
   const [savedId, setSavedId] = useState(null);
   const [checklistItems, setChecklistItems] = useState(data?.checklist || []);
+  const [progressMap, setProgressMap] = useState({});
 
   const flashcards = data?.flashcards || [];
   const quiz = data?.quiz || [];
+
+  // Determine available views based on what was generated
+  const availableViews = [];
+  if (flashcards.length > 0) availableViews.push("flashcards");
+  if (quiz.length > 0) availableViews.push("quiz");
+  if (checklistItems.length > 0) availableViews.push("checklist");
+
+  const [activeView, setActiveView] = useState(availableViews[0] || "flashcards");
+
+  const handleUpdateProgress = (cardIndex, status) => {
+    setProgressMap((prev) => ({ ...prev, [cardIndex]: status }));
+  };
 
   const handleSaveToLibrary = async () => {
     setIsSaving(true);
@@ -81,8 +92,35 @@ export default function GenerationPreview({
     setChecklistItems((prev) => prev.filter((item, idx) => (item.id || idx) !== id));
   };
 
+  const viewConfig = {
+    flashcards: {
+      icon: Layers,
+      label: "Flashcards",
+      count: flashcards.length,
+      color: "accent-blue",
+      bgActive: "bg-accent-blue/15 border-accent-blue/50 text-accent-blue",
+      bgHover: "hover:bg-accent-blue/5 hover:border-accent-blue/20",
+    },
+    quiz: {
+      icon: BookOpen,
+      label: "Quiz",
+      count: quiz.length,
+      color: "accent-amber",
+      bgActive: "bg-accent-amber/15 border-accent-amber/50 text-accent-amber",
+      bgHover: "hover:bg-accent-amber/5 hover:border-accent-amber/20",
+    },
+    checklist: {
+      icon: CheckSquare,
+      label: "Checklist",
+      count: checklistItems.length,
+      color: "accent-sky",
+      bgActive: "bg-accent-sky/15 border-accent-sky/50 text-accent-sky",
+      bgHover: "hover:bg-accent-sky/5 hover:border-accent-sky/20",
+    },
+  };
+
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-8 animate-fade-in">
+    <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Header Bar */}
       <Card className="border-border-subtle bg-surface/60 backdrop-blur-xl p-6 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -127,75 +165,70 @@ export default function GenerationPreview({
             </button>
           </div>
         </div>
-
-        {/* Tab Filter */}
-        <div className="flex items-center gap-2 pt-6 border-t border-border-subtle/80 mt-5">
-          {[
-            { id: "all", label: "Overview & All", count: null },
-            { id: "flashcards", label: "Flashcards", count: flashcards.length },
-            { id: "quiz", label: "Quiz", count: quiz.length },
-            { id: "checklist", label: "Checklist", count: checklistItems.length },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === tab.id
-                  ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold"
-                  : "text-text-tertiary hover:text-text-secondary"
-              }`}
-            >
-              {tab.label}
-              {tab.count !== null && (
-                <span className="font-mono text-[10px] px-1 rounded bg-surface border border-border-subtle">
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
       </Card>
+
+      {/* View Switcher — prominent large tabs */}
+      {availableViews.length > 1 && (
+        <div className="flex items-center gap-3">
+          {availableViews.map((viewId) => {
+            const cfg = viewConfig[viewId];
+            const Icon = cfg.icon;
+            const isActive = activeView === viewId;
+
+            return (
+              <button
+                key={viewId}
+                onClick={() => setActiveView(viewId)}
+                className={`flex-1 flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl border text-sm font-semibold transition-all ${
+                  isActive
+                    ? cfg.bgActive
+                    : `bg-surface/40 border-border-subtle text-text-tertiary ${cfg.bgHover}`
+                }`}
+              >
+                <Icon className="w-4.5 h-4.5" />
+                <span>{cfg.label}</span>
+                <span
+                  className={`font-mono text-xs px-1.5 py-0.5 rounded-md ${
+                    isActive
+                      ? "bg-white/10"
+                      : "bg-surface border border-border-subtle"
+                  }`}
+                >
+                  {cfg.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Refinement Loop */}
       <RefinementBar onRefine={onRefine} isLoading={isLoading} />
 
-      {/* Content Viewers */}
-      <div className="space-y-10">
-        {/* Flashcards Section */}
-        {(activeTab === "all" || activeTab === "flashcards") && flashcards.length > 0 && (
-          <section className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-accent-blue" />
-              <h3 className="text-base font-semibold tracking-tight text-text-primary">
-                Interactive Flashcards ({flashcards.length})
-              </h3>
-            </div>
-            <FlashcardViewer cards={flashcards} title={data.title} />
+      {/* Single Active Content View */}
+      <div>
+        {/* Flashcards View */}
+        {activeView === "flashcards" && flashcards.length > 0 && (
+          <section className="space-y-4 animate-fade-in">
+            <FlashcardViewer
+              cards={flashcards}
+              title={data.title}
+              progressMap={progressMap}
+              onUpdateProgress={handleUpdateProgress}
+            />
           </section>
         )}
 
-        {/* Quiz Section */}
-        {(activeTab === "all" || activeTab === "quiz") && quiz.length > 0 && (
-          <section className="space-y-4 pt-4 border-t border-border-subtle/60">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-accent-yellow" />
-              <h3 className="text-base font-semibold tracking-tight text-text-primary">
-                Self-Assessment Quiz ({quiz.length} Questions)
-              </h3>
-            </div>
+        {/* Quiz View */}
+        {activeView === "quiz" && quiz.length > 0 && (
+          <section className="space-y-4 animate-fade-in">
             <QuizPlayer questions={quiz} title={data.title} />
           </section>
         )}
 
-        {/* Checklist Section */}
-        {(activeTab === "all" || activeTab === "checklist") && checklistItems.length > 0 && (
-          <section className="space-y-4 pt-4 border-t border-border-subtle/60">
-            <div className="flex items-center gap-2">
-              <CheckSquare className="w-5 h-5 text-accent-sky" />
-              <h3 className="text-base font-semibold tracking-tight text-text-primary">
-                Mastery Checklist
-              </h3>
-            </div>
+        {/* Checklist View */}
+        {activeView === "checklist" && checklistItems.length > 0 && (
+          <section className="space-y-4 animate-fade-in">
             <StudyChecklist
               items={checklistItems}
               onToggleItem={handleToggleChecklist}

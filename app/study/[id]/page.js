@@ -247,59 +247,71 @@ export default function StudySetDetailPage() {
             </div>
           </div>
 
-          {/* Tab Selector */}
-          <div className="flex items-center gap-2 pt-6 border-t border-border-subtle/80 mt-5">
+          {/* Tab Selector — prominent view switcher */}
+          <div className="flex items-center gap-3 pt-6 border-t border-border-subtle/80 mt-5">
             {flashcards.length > 0 && (
               <button
                 onClick={() => setActiveTab("flashcards")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
                   activeTab === "flashcards"
-                    ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold"
-                    : "text-text-tertiary hover:text-text-secondary"
+                    ? "bg-accent-blue/15 border-accent-blue/50 text-accent-blue"
+                    : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-accent-blue/5 hover:border-accent-blue/20"
                 }`}
               >
-                <Layers className="w-3.5 h-3.5 text-accent-blue" />
-                Flashcards ({flashcards.length})
+                <Layers className="w-4 h-4" />
+                Flashcards
+                <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
+                  activeTab === "flashcards" ? "bg-white/10" : "bg-surface border border-border-subtle"
+                }`}>{flashcards.length}</span>
               </button>
             )}
 
             {quiz.length > 0 && (
               <button
                 onClick={() => setActiveTab("quiz")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
                   activeTab === "quiz"
-                    ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold"
-                    : "text-text-tertiary hover:text-text-secondary"
+                    ? "bg-accent-amber/15 border-accent-amber/50 text-accent-amber"
+                    : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-accent-amber/5 hover:border-accent-amber/20"
                 }`}
               >
-                <BookOpen className="w-3.5 h-3.5 text-accent-yellow" />
-                Quiz ({quiz.length})
+                <BookOpen className="w-4 h-4" />
+                Quiz
+                <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
+                  activeTab === "quiz" ? "bg-white/10" : "bg-surface border border-border-subtle"
+                }`}>{quiz.length}</span>
               </button>
             )}
 
             <button
               onClick={() => setActiveTab("checklist")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
                 activeTab === "checklist"
-                  ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold"
-                  : "text-text-tertiary hover:text-text-secondary"
+                  ? "bg-accent-sky/15 border-accent-sky/50 text-accent-sky"
+                  : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-accent-sky/5 hover:border-accent-sky/20"
               }`}
             >
-              <CheckSquare className="w-3.5 h-3.5 text-accent-sky" />
-              Study Checklist ({checklist.length})
+              <CheckSquare className="w-4 h-4" />
+              Checklist
+              <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
+                activeTab === "checklist" ? "bg-white/10" : "bg-surface border border-border-subtle"
+              }`}>{checklist.length}</span>
             </button>
 
             {attempts.length > 0 && (
               <button
                 onClick={() => setActiveTab("history")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
                   activeTab === "history"
-                    ? "bg-surface-hover text-text-primary border border-border-translucent font-semibold"
-                    : "text-text-tertiary hover:text-text-secondary"
+                    ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
+                    : "bg-surface/40 border-border-subtle text-text-tertiary hover:bg-emerald-500/5 hover:border-emerald-500/20"
                 }`}
               >
-                <Award className="w-3.5 h-3.5 text-emerald-400" />
-                History ({attempts.length})
+                <Award className="w-4 h-4" />
+                History
+                <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded-md ${
+                  activeTab === "history" ? "bg-white/10" : "bg-surface border border-border-subtle"
+                }`}>{attempts.length}</span>
               </button>
             )}
           </div>
@@ -376,3 +388,4 @@ export default function StudySetDetailPage() {
     </div>
   );
 }
+
