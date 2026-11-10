@@ -2,8 +2,7 @@
 -- Description: Core schema for Study Assistant: study_sets, flashcard_progress, quiz_attempts, checklist_items
 -- Constraints, cascading deletion, foreign keys, indexes, and updated_at triggers included.
 
--- Enable UUID extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Note: gen_random_uuid() is built into PostgreSQL 13+ (no public extension required).
 
 -- 1. study_sets table
 CREATE TABLE IF NOT EXISTS public.study_sets (
@@ -58,14 +57,17 @@ CREATE INDEX IF NOT EXISTS idx_flashcard_progress_set ON public.flashcard_progre
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_set ON public.quiz_attempts(study_set_id);
 CREATE INDEX IF NOT EXISTS idx_checklist_items_set ON public.checklist_items(study_set_id);
 
--- Trigger function for updated_at timestamps
+-- Trigger function for updated_at timestamps (immutable search_path for Supabase Security Advisor)
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
-  NEW.updated_at = timezone('utc'::text, now());
+  NEW.updated_at = pg_catalog.timezone('utc'::text, pg_catalog.now());
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Apply updated_at triggers
 DROP TRIGGER IF EXISTS trigger_study_sets_updated_at ON public.study_sets;
@@ -96,3 +98,4 @@ ALTER TABLE public.checklist_items ENABLE ROW LEVEL SECURITY;
 -- Notice on RLS: In this single-user demo setup without public user auth,
 -- all queries are routed through server Route Handlers using the Service Role key.
 -- For multi-user setups, add auth.uid() owner policies here.
+

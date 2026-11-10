@@ -28,3 +28,7 @@ yarn-error.log*
 *.pem
 .vscode/
 .idea/
+
+# Local data fallback store
+.data/
+
