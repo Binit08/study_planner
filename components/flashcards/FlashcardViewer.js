@@ -5,6 +5,7 @@ import {
   RotateCw,
   ChevronLeft,
   ChevronRight,
+  ChevronsRight,
   CheckCircle2,
   Clock,
   HelpCircle,
@@ -85,8 +86,10 @@ export default function FlashcardViewer({
         handlePrev();
       } else if (e.key === "1") {
         handleSetStatus("learning");
+        handleNext();
       } else if (e.key === "2") {
         handleSetStatus("mastered");
+        handleNext();
       }
     };
 
@@ -178,57 +181,100 @@ export default function FlashcardViewer({
           className="relative min-h-[280px] sm:min-h-[320px] rounded-2xl cursor-pointer select-none perspective-1000 group"
         >
           <div
-            className={`w-full h-full min-h-[280px] sm:min-h-[320px] rounded-2xl border border-border-subtle bg-surface-translucent backdrop-blur-xl p-8 flex flex-col justify-between transition-all duration-300 shadow-glass hover:border-accent-sky/40 relative overflow-hidden ${
-              isFlipped ? "border-accent-amber/40 bg-surface/70" : ""
+            className={`flip-card-inner min-h-[280px] sm:min-h-[320px] ${
+              isFlipped ? "flipped" : ""
             }`}
           >
-            {/* Ambient Corner Glow */}
+            {/* FRONT FACE */}
             <div
-              className={`absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none transition-opacity ${
-                isFlipped ? "bg-accent-amber/20 opacity-100" : "bg-accent-sky/20 opacity-60"
-              }`}
-            />
+              className="flip-card-front w-full min-h-[280px] sm:min-h-[320px] rounded-2xl border border-border-subtle bg-surface-translucent backdrop-blur-xl p-8 flex flex-col justify-between shadow-glass hover:border-accent-sky/40 relative overflow-hidden transition-colors"
+            >
+              {/* Ambient Corner Glow */}
+              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none bg-accent-sky/20 opacity-60" />
 
-            {/* Top Card Info Bar */}
-            <div className="flex items-center justify-between z-10">
-              <span className="text-xs font-semibold tracking-wider uppercase text-text-tertiary">
-                {isFlipped ? "Answer / Explanation" : "Question / Term"}
-              </span>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant={
-                    currentStatus === "mastered"
-                      ? "mastered"
-                      : currentStatus === "learning"
-                      ? "learning"
-                      : "unseen"
-                  }
-                  size="xs"
-                >
-                  {currentStatus.toUpperCase()}
-                </Badge>
-                <span className="text-text-tertiary text-xs flex items-center gap-1 group-hover:text-text-secondary">
-                  <RotateCw className="w-3.5 h-3.5" />
-                  Flip
+              {/* Top Card Info Bar */}
+              <div className="flex items-center justify-between z-10">
+                <span className="text-xs font-semibold tracking-wider uppercase text-text-tertiary">
+                  Question / Term
                 </span>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={
+                      currentStatus === "mastered"
+                        ? "mastered"
+                        : currentStatus === "learning"
+                        ? "learning"
+                        : "unseen"
+                    }
+                    size="xs"
+                  >
+                    {currentStatus.toUpperCase()}
+                  </Badge>
+                  <span className="text-text-tertiary text-xs flex items-center gap-1 group-hover:text-text-secondary">
+                    <RotateCw className="w-3.5 h-3.5" />
+                    Flip
+                  </span>
+                </div>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="my-auto py-6 text-center z-10">
+                <p className="text-lg sm:text-xl font-semibold tracking-tight text-text-primary leading-relaxed">
+                  {currentCard.front}
+                </p>
+              </div>
+
+              {/* Bottom status helper */}
+              <div className="flex items-center justify-between z-10 text-[11px] text-text-tertiary pt-2 border-t border-border-subtle/50">
+                <span>Click card or press Space to reveal answer</span>
+                <span className="font-mono">Index #{activeIndex + 1}</span>
               </div>
             </div>
 
-            {/* Main Content Area */}
-            <div className="my-auto py-6 text-center z-10">
-              <p
-                className={`text-lg sm:text-xl font-medium tracking-tight text-text-primary leading-relaxed ${
-                  isFlipped ? "text-text-primary" : "text-text-primary font-semibold"
-                }`}
-              >
-                {isFlipped ? currentCard.back : currentCard.front}
-              </p>
-            </div>
+            {/* BACK FACE */}
+            <div
+              className="flip-card-back w-full min-h-[280px] sm:min-h-[320px] rounded-2xl border border-accent-amber/40 bg-surface/70 backdrop-blur-xl p-8 flex flex-col justify-between shadow-glass relative overflow-hidden transition-colors"
+            >
+              {/* Ambient Corner Glow */}
+              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-2xl pointer-events-none bg-accent-amber/20 opacity-100" />
 
-            {/* Bottom status helper */}
-            <div className="flex items-center justify-between z-10 text-[11px] text-text-tertiary pt-2 border-t border-border-subtle/50">
-              <span>Click card or press Space to reveal {isFlipped ? "prompt" : "answer"}</span>
-              <span className="font-mono">Index #{activeIndex + 1}</span>
+              {/* Top Card Info Bar */}
+              <div className="flex items-center justify-between z-10">
+                <span className="text-xs font-semibold tracking-wider uppercase text-text-tertiary">
+                  Answer / Explanation
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={
+                      currentStatus === "mastered"
+                        ? "mastered"
+                        : currentStatus === "learning"
+                        ? "learning"
+                        : "unseen"
+                    }
+                    size="xs"
+                  >
+                    {currentStatus.toUpperCase()}
+                  </Badge>
+                  <span className="text-text-tertiary text-xs flex items-center gap-1 group-hover:text-text-secondary">
+                    <RotateCw className="w-3.5 h-3.5" />
+                    Flip
+                  </span>
+                </div>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="my-auto py-6 text-center z-10">
+                <p className="text-lg sm:text-xl font-medium tracking-tight text-text-primary leading-relaxed">
+                  {currentCard.back}
+                </p>
+              </div>
+
+              {/* Bottom status helper */}
+              <div className="flex items-center justify-between z-10 text-[11px] text-text-tertiary pt-2 border-t border-border-subtle/50">
+                <span>Click card or press Space to reveal prompt</span>
+                <span className="font-mono">Index #{activeIndex + 1}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -245,53 +291,107 @@ export default function FlashcardViewer({
       )}
 
       {/* Navigation and Mastery Rating Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-        {/* Previous / Next */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-          <button
-            type="button"
-            onClick={handlePrev}
-            disabled={cardOrder.length <= 1}
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-medium bg-surface border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-translucent disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={cardOrder.length <= 1}
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-medium bg-surface border border-border-subtle text-text-secondary hover:text-text-primary hover:border-border-translucent disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Status Marking Controls */}
-        {currentCard && (
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+      <div className="pt-2">
+        {currentCard && isFlipped ? (
+          /* Post-Flip Rating Bar (Forgot / Remembered / Skip) */
+          <div className="w-full bg-[#141416]/90 backdrop-blur-xl border border-border-subtle rounded-2xl p-3 flex items-center justify-between gap-3 shadow-glass animate-fade-in">
+            {/* Skip Button (Left) */}
             <button
               type="button"
-              onClick={() => {
-                handleSetStatus("learning");
-                handleNext();
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition-all flex-1 sm:flex-initial justify-center"
+              onClick={handleNext}
+              className="flex flex-col items-center justify-center px-4 py-2 text-text-tertiary hover:text-text-primary transition-all group rounded-xl hover:bg-surface min-w-[64px]"
+              title="Skip without rating"
             >
-              <Clock className="w-3.5 h-3.5" />
-              Need Practice (1)
+              <ChevronsRight className="w-5 h-5 text-text-tertiary group-hover:text-text-primary group-hover:translate-x-0.5 transition-transform" />
+              <span className="text-xs font-medium mt-1">Skip</span>
             </button>
+
+            {/* Rating Actions (Center 2 Large Equal Buttons) */}
+            <div className="flex-1 grid grid-cols-2 gap-3 max-w-lg mx-auto">
+              {/* Forgot Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleSetStatus("learning");
+                  handleNext();
+                }}
+                className="flex flex-col items-center justify-center py-3.5 px-4 rounded-xl border border-border-subtle bg-surface/80 hover:bg-rose-500/10 hover:border-rose-500/40 text-text-primary transition-all group active:scale-[0.98] shadow-sm"
+              >
+                <span className="text-2xl font-bold text-red-500 leading-none mb-1 group-hover:scale-110 transition-transform">
+                  ✕
+                </span>
+                <span className="text-sm font-medium text-text-secondary group-hover:text-text-primary flex items-center gap-1.5">
+                  Forgot
+                  <kbd className="hidden sm:inline text-[10px] text-text-tertiary font-mono px-1 py-0.2 rounded bg-black/50 border border-border-subtle">
+                    1
+                  </kbd>
+                </span>
+              </button>
+
+              {/* Remembered Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  handleSetStatus("mastered");
+                  handleNext();
+                }}
+                className="flex flex-col items-center justify-center py-3.5 px-4 rounded-xl border border-border-subtle bg-surface/80 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-text-primary transition-all group active:scale-[0.98] shadow-sm"
+              >
+                <span className="text-2xl leading-none mb-1 group-hover:scale-110 transition-transform">
+                  😄
+                </span>
+                <span className="text-sm font-medium text-text-secondary group-hover:text-text-primary flex items-center gap-1.5">
+                  Remembered
+                  <kbd className="hidden sm:inline text-[10px] text-text-tertiary font-mono px-1 py-0.2 rounded bg-black/50 border border-border-subtle">
+                    2
+                  </kbd>
+                </span>
+              </button>
+            </div>
+
+            {/* Fast Forward / Next Button (Right) */}
             <button
               type="button"
-              onClick={() => {
-                handleSetStatus("mastered");
-                handleNext();
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all flex-1 sm:flex-initial justify-center"
+              onClick={handleNext}
+              className="flex items-center justify-center px-4 py-4 text-text-tertiary hover:text-text-primary transition-all group rounded-xl hover:bg-surface min-w-[52px]"
+              title="Next card"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Mastered (2)
+              <ChevronsRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </div>
+        ) : (
+          /* Pre-Flip Navigation Bar (Before revealing answer) */
+          <div className="w-full bg-surface-translucent backdrop-blur-xl border border-border-subtle rounded-2xl p-3 flex items-center justify-between gap-3 shadow-glass">
+            <button
+              type="button"
+              onClick={handlePrev}
+              disabled={cardOrder.length <= 1}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+
+            <button
+              type="button"
+              onClick={handleFlip}
+              className="flex-1 max-w-sm inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-xs sm:text-sm font-semibold bg-surface border border-border-translucent text-text-primary hover:bg-surface-hover hover:border-accent-sky/50 transition-all shadow-sm group"
+            >
+              <RotateCw className="w-4 h-4 text-accent-sky group-hover:rotate-180 transition-transform duration-500" />
+              Flip to Reveal Answer
+              <kbd className="text-[10px] text-text-tertiary font-mono px-1.5 py-0.5 rounded bg-black/40 border border-border-subtle">
+                Space
+              </kbd>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={cardOrder.length <= 1}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -299,3 +399,4 @@ export default function FlashcardViewer({
     </div>
   );
 }
+
