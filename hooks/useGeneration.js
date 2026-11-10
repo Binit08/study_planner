@@ -6,6 +6,7 @@ export function useGeneration() {
   const [status, setStatus] = useState("idle"); // "idle" | "loading" | "success" | "error"
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+  const [sourceMeta, setSourceMeta] = useState(null);
   const [lastParams, setLastParams] = useState(null);
 
   // Stale response tracking & request cancellation
@@ -83,6 +84,7 @@ export function useGeneration() {
         }
 
         setData(json.data);
+        setSourceMeta(json.source || { type: file ? "pdf" : "text", name: file?.name || null });
         setStatus("success");
         return json.data;
       } catch (err) {
@@ -131,6 +133,7 @@ export function useGeneration() {
   const reset = useCallback(() => {
     cancel();
     setData(null);
+    setSourceMeta(null);
     setError(null);
     setStatus("idle");
     setLastParams(null);
@@ -143,6 +146,7 @@ export function useGeneration() {
     isSuccess: status === "success",
     error,
     data,
+    sourceMeta,
     setData,
     generate,
     refine,
@@ -151,3 +155,4 @@ export function useGeneration() {
     reset,
   };
 }
+

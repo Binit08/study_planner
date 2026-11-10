@@ -28,6 +28,7 @@ export default function GenerationForm({
   const [selectedFile, setSelectedFile] = useState(null);
   const [mode, setMode] = useState("both"); // "flashcards" | "quiz" | "both"
   const [itemCount, setItemCount] = useState(6);
+  const [validationError, setValidationError] = useState(null);
   const fileInputRef = useRef(null);
 
   const sampleTopics = [
@@ -52,9 +53,10 @@ export default function GenerationForm({
     const file = e.target.files?.[0];
     if (file) {
       if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
-        alert("Please upload a PDF file (.pdf)");
+        setValidationError("Please upload a valid PDF document (.pdf).");
         return;
       }
+      setValidationError(null);
       setSelectedFile(file);
     }
   };
@@ -66,13 +68,15 @@ export default function GenerationForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!selectedFile && (!inputText || inputText.trim().length < 10)) {
-      alert("Please provide at least 10 characters of notes or upload a PDF document.");
+    const trimmed = inputText.trim();
+    if (!selectedFile && trimmed.length < 2) {
+      setValidationError("Enter a topic (at least 2 characters), paste notes, or attach a PDF document.");
       return;
     }
 
+    setValidationError(null);
     onGenerate({
-      text: inputText,
+      text: trimmed,
       file: selectedFile,
       mode,
       targetCount: itemCount,
@@ -100,12 +104,22 @@ export default function GenerationForm({
           {/* Text Area */}
           <textarea
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={(e) => {
+              setInputText(e.target.value);
+              if (validationError) setValidationError(null);
+            }}
             disabled={isLoading}
-            placeholder="Paste your study notes, lecture transcript, syllabus outline, or topic summary here..."
+            placeholder="Enter a topic (e.g., DSA, Operating Systems) or paste lecture notes here..."
             rows={selectedFile ? 3 : 5}
             className="w-full rounded-lg bg-canvas/80 border border-border-subtle p-3.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-accent-sky/50 focus:ring-1 focus:ring-accent-sky/30 transition-all resize-y leading-relaxed"
           />
+
+          {validationError && (
+            <p className="text-xs text-rose-400 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              {validationError}
+            </p>
+          )}
 
           {/* PDF Upload Badge / Input */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
@@ -226,8 +240,7 @@ export default function GenerationForm({
               ) : (
                 <button
                   type="submit"
-                  disabled={!selectedFile && inputText.trim().length < 10}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-medium bg-gradient-to-r from-accent-amber/90 via-accent-sky/90 to-accent-blue/90 text-black hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2 font-semibold tracking-wide"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg text-xs font-medium bg-gradient-to-r from-accent-amber/90 via-accent-sky/90 to-accent-blue/90 text-black hover:opacity-95 transition-all shadow-md flex items-center justify-center gap-2 font-semibold tracking-wide cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 text-black" />
                   Generate Study Assistant
@@ -311,3 +324,4 @@ export default function GenerationForm({
     </div>
   );
 }
+

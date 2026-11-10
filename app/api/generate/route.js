@@ -53,17 +53,17 @@ export async function POST(request) {
       }
     } else {
       const body = await request.json();
-      text = body.text || "";
+      text = String(body.text || "").trim();
       mode = body.mode || "both";
       targetCount = body.targetCount || 6;
       refinementPrompt = body.refinementPrompt;
       existingSet = body.existingSet;
     }
 
-    if (!text || text.length < 10) {
+    if (!text || text.length < 2) {
       return NextResponse.json(
         {
-          error: "Source material too short. Please provide at least 10 characters of notes, text, or a PDF document.",
+          error: "Source material too short. Please enter a topic (at least 2 characters), paste notes, or upload a PDF document.",
           code: "VALIDATION_FAILED",
         },
         { status: 400 }
@@ -132,3 +132,4 @@ export async function POST(request) {
     );
   }
 }
+
