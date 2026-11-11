@@ -25,15 +25,18 @@ export default function QuizPlayer({
   const [isRetestingWrongOnly, setIsRetestingWrongOnly] = useState(false);
   const [scoreSummary, setScoreSummary] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [attemptSaved, setAttemptSaved] = useState(false);
 
-  // Sync questions if prop changes and not submitted
+  // Reset state only when the source questions array changes
   useEffect(() => {
-    if (!isSubmitted && !isRetestingWrongOnly) {
-      setActiveQuestions(questions);
-      setSelectedAnswers({});
-      setCurrentIndex(0);
-    }
-  }, [questions, isSubmitted, isRetestingWrongOnly]);
+    setActiveQuestions(questions);
+    setSelectedAnswers({});
+    setCurrentIndex(0);
+    setIsSubmitted(false);
+    setIsRetestingWrongOnly(false);
+    setScoreSummary(null);
+    setAttemptSaved(false);
+  }, [questions]);
 
   const currentQ = activeQuestions[currentIndex];
 
@@ -102,10 +105,13 @@ export default function QuizPlayer({
 
     setScoreSummary(summary);
     setIsSubmitted(true);
+    setAttemptSaved(false);
 
-    if (onSubmitAttempt) {
+    // Only persist full-quiz attempts (skip skewed partial mistake-drill subsets)
+    if (onSubmitAttempt && !isRetestingWrongOnly) {
       try {
         await onSubmitAttempt(answersPayload);
+        setAttemptSaved(true);
       } catch (err) {
         console.error("Failed to record attempt:", err);
       }
@@ -143,8 +149,8 @@ export default function QuizPlayer({
   }
 
   const answeredCount = Object.keys(selectedAnswers).length;
-  const progressPercent = activeQuestions.length > 0 
-    ? Math.round(((currentIndex + 1) / activeQuestions.length) * 100) 
+  const progressPercent = activeQuestions.length > 0
+    ? Math.round(((currentIndex + 1) / activeQuestions.length) * 100)
     : 0;
 
   return (
@@ -204,16 +210,14 @@ export default function QuizPlayer({
                       key={optIdx}
                       type="button"
                       onClick={() => handleSelectOption(optIdx)}
-                      className={`w-full flex items-center gap-4 p-5 text-left border-2 border-slate-800 rounded-xl transition-all option-hover group ${
-                        isSelected
+                      className={`w-full flex items-center gap-4 p-5 text-left border-2 border-slate-800 rounded-xl transition-all option-hover group ${isSelected
                           ? "bg-yellow-100 hard-shadow-sm -rotate-1"
                           : "bg-white hover:bg-yellow-50 active:translate-x-1 active:translate-y-1"
-                      }`}
+                        }`}
                     >
                       <span
-                        className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg font-bold text-xl font-hand border border-slate-800 ${
-                          isSelected ? "bg-yellow-400" : "bg-slate-100 group-hover:bg-yellow-200"
-                        }`}
+                        className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg font-bold text-xl font-hand border border-slate-800 ${isSelected ? "bg-yellow-400" : "bg-slate-100 group-hover:bg-yellow-200"
+                          }`}
                       >
                         {optIdx + 1}
                       </span>
@@ -243,13 +247,12 @@ export default function QuizPlayer({
                   <button
                     key={i}
                     onClick={() => setCurrentIndex(i)}
-                    className={`w-3.5 h-3.5 rounded-full transition-all border border-slate-800 ${
-                      currentIndex === i
+                    className={`w-3.5 h-3.5 rounded-full transition-all border border-slate-800 ${currentIndex === i
                         ? "bg-yellow-400 scale-125"
                         : selectedAnswers[i] !== undefined
-                        ? "bg-slate-800"
-                        : "bg-slate-200 hover:bg-slate-300"
-                    }`}
+                          ? "bg-slate-800"
+                          : "bg-slate-200 hover:bg-slate-300"
+                      }`}
                     title={`Question ${i + 1}`}
                   />
                 ))}
@@ -321,9 +324,8 @@ export default function QuizPlayer({
         <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
           {/* Results Summary Card */}
           <div
-            className={`bg-white p-8 wobbly-border hard-shadow text-center space-y-4 ${
-              scoreSummary.passed ? "border-emerald-700" : "border-slate-800"
-            }`}
+            className={`bg-white p-8 wobbly-border hard-shadow text-center space-y-4 ${scoreSummary.passed ? "border-emerald-700" : "border-slate-800"
+              }`}
           >
             <div className="inline-flex p-4 rounded-2xl bg-yellow-100 wobbly-border-sm rotate-3">
               <Award
@@ -341,8 +343,19 @@ export default function QuizPlayer({
             </div>
 
             <div className="inline-block px-4 py-1.5 bg-yellow-100 text-slate-900 font-bold text-base wobbly-border-sm">
-              {scoreSummary.passed ? "Assessment Passed 🎉" : "Needs Review 📚"}
+              {isRetestingWrongOnly
+                ? scoreSummary.passed
+                  ? "Mistake Drill Cleared 🎯"
+                  : "Keep Practicing Mistakes 📚"
+                : scoreSummary.passed
+                ? "Assessment Passed 🎉"
+                : "Needs Review 📚"}
             </div>
+            {attemptSaved && (
+              <p className="text-sm font-hand font-bold text-emerald-700">
+                ✓ Score saved to study history
+              </p>
+            )}
 
             {/* Action Buttons: Retest wrong answers or restart */}
             <div className="flex flex-wrap items-center justify-center gap-4 pt-6 border-t-2 border-dashed border-slate-200">
@@ -387,9 +400,8 @@ export default function QuizPlayer({
               return (
                 <div
                   key={idx}
-                  className={`bg-white p-6 wobbly-border-sm hard-shadow-sm space-y-4 ${
-                    isCorrect ? "border-emerald-600" : "border-rose-500"
-                  }`}
+                  className={`bg-white p-6 wobbly-border-sm hard-shadow-sm space-y-4 ${isCorrect ? "border-emerald-600" : "border-rose-500"
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <h4 className="text-xl font-bold font-hand text-slate-900 leading-snug">

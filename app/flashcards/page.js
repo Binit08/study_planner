@@ -2,18 +2,43 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Layers, Plus, Sparkles, BookOpen } from "lucide-react";
+import { Layers, Plus, Sparkles } from "lucide-react";
 import FlashcardViewer from "@/components/flashcards/FlashcardViewer";
+
+function buildMapsFromProgress(progressList = []) {
+  const pMap = {};
+  const dMap = {};
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+
+  progressList.forEach((p) => {
+    pMap[p.card_index] = p.status;
+    if (p.status !== "unseen" && p.next_review_at) {
+      dMap[p.card_index] = new Date(p.next_review_at).getTime() <= endOfToday.getTime();
+    }
+  });
+
+  return { pMap, dMap };
+}
 
 export default function FlashcardsHubPage() {
   const [sets, setSets] = useState([]);
   const [selectedSet, setSelectedSet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [progressMap, setProgressMap] = useState({});
+  const [dueMap, setDueMap] = useState({});
+  const [initialFilter, setInitialFilter] = useState("all");
 
   useEffect(() => {
     async function loadSets() {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const requestedSetId = params.get("setId");
+        const requestedFilter = params.get("filter");
+        if (requestedFilter) {
+          setInitialFilter(requestedFilter);
+        }
+
         const res = await fetch("/api/study-sets");
         const json = await res.json();
         if (json.data) {
@@ -22,7 +47,10 @@ export default function FlashcardsHubPage() {
           );
           setSets(setsWithCards);
           if (setsWithCards.length > 0) {
-            setSelectedSet(setsWithCards[0]);
+            const matched = requestedSetId
+              ? setsWithCards.find((s) => s.id === requestedSetId)
+              : null;
+            setSelectedSet(matched || setsWithCards[0]);
           }
         }
       } catch (err) {
@@ -34,8 +62,33 @@ export default function FlashcardsHubPage() {
     loadSets();
   }, []);
 
+  useEffect(() => {
+    if (!selectedSet?.id) return;
+    let active = true;
+
+    async function loadProgress() {
+      try {
+        const res = await fetch(`/api/study-sets/${selectedSet.id}`);
+        const json = await res.json();
+        if (active && json.data) {
+          const { pMap, dMap } = buildMapsFromProgress(json.data.progress || []);
+          setProgressMap(pMap);
+          setDueMap(dMap);
+        }
+      } catch (err) {
+        console.error("Failed to load deck progress:", err);
+      }
+    }
+
+    loadProgress();
+    return () => {
+      active = false;
+    };
+  }, [selectedSet?.id]);
+
   const handleUpdateProgress = async (cardIndex, status) => {
     setProgressMap((prev) => ({ ...prev, [cardIndex]: status }));
+    setDueMap((prev) => ({ ...prev, [cardIndex]: false }));
     if (!selectedSet?.id) return;
 
     try {
@@ -55,14 +108,14 @@ export default function FlashcardsHubPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-dashed border-slate-200 pb-6">
         <div className="rotate-[-0.5deg]">
           <div className="inline-block px-3 py-1 bg-yellow-100 wobbly-border-sm text-xs font-bold uppercase mb-2">
-            Active Recall Mode
+            Active Recall &bull; Spaced Repetition
           </div>
           <h1 className="text-4xl font-bold font-hand text-slate-900 flex items-center gap-3">
             <Layers className="w-8 h-8 text-yellow-600" />
             Flashcard Decks
           </h1>
           <p className="text-lg text-slate-600 font-hand mt-1">
-            Flip cards to test memory retention, use Anki ratings, and track mastery.
+            Flip cards to test memory retention, track SM-2 intervals, and clear today&apos;s due queue.
           </p>
         </div>
 
@@ -87,6 +140,7 @@ export default function FlashcardsHubPage() {
               onClick={() => {
                 setSelectedSet(s);
                 setProgressMap({});
+                setDueMap({});
               }}
               className={`px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-lg transition-all flex-shrink-0 ${
                 selectedSet?.id === s.id
@@ -124,8 +178,11 @@ export default function FlashcardsHubPage() {
           </div>
 
           <FlashcardViewer
+            key={selectedSet.id}
             flashcards={selectedSet.flashcards}
             progressMap={progressMap}
+            dueMap={dueMap}
+            initialFilter={initialFilter}
             onUpdateProgress={handleUpdateProgress}
           />
         </div>
@@ -134,7 +191,7 @@ export default function FlashcardsHubPage() {
           <Layers className="w-16 h-16 text-yellow-400 mx-auto" />
           <h2 className="text-3xl font-bold font-hand text-slate-900">No Flashcards Yet</h2>
           <p className="text-lg text-slate-600 font-hand">
-            You haven't generated any flashcard sets. Feed your notes or syllabus to our AI assistant to get started.
+            You haven&apos;t generated any flashcard sets. Feed your notes or syllabus to our AI assistant to get started.
           </p>
           <Link
             href="/"

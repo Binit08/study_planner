@@ -7,13 +7,16 @@ export default function StudySetCard({ set, onDelete, rotation = "rotate-1" }) {
   const cardCount = Array.isArray(set.flashcards) ? set.flashcards.length : 0;
   const quizCount = Array.isArray(set.quiz) ? set.quiz.length : 0;
   const attemptCount = Array.isArray(set.attempts) ? set.attempts.length : 0;
+  const masteredCount = Array.isArray(set.progress)
+    ? set.progress.filter((p) => p.status === "mastered").length
+    : 0;
 
   const dateStr = set.created_at
     ? new Date(set.created_at).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
     : "Recently";
 
   return (
@@ -67,8 +70,12 @@ export default function StudySetCard({ set, onDelete, rotation = "rotate-1" }) {
       <div>
         <div className="flex justify-around py-4 border-y-2 border-dashed border-slate-200 mb-6 text-center">
           <div className="flex flex-col">
-            <span className="text-2xl font-bold font-hand text-slate-900">{cardCount}</span>
-            <span className="text-[11px] text-slate-400 uppercase font-bold">Cards</span>
+            <span className="text-2xl font-bold font-hand text-slate-900">
+              {cardCount}
+            </span>
+            <span className="text-[11px] text-slate-400 uppercase font-bold">
+              {masteredCount > 0 ? `${masteredCount} Mastered` : "Cards"}
+            </span>
           </div>
           <div className="flex flex-col">
             <span className="text-2xl font-bold font-hand text-slate-900">{quizCount}</span>

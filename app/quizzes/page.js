@@ -13,6 +13,9 @@ export default function QuizzesHubPage() {
   useEffect(() => {
     async function loadSets() {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const requestedSetId = params.get("setId");
+
         const res = await fetch("/api/study-sets");
         const json = await res.json();
         if (json.data) {
@@ -21,7 +24,10 @@ export default function QuizzesHubPage() {
           );
           setSets(setsWithQuiz);
           if (setsWithQuiz.length > 0) {
-            setSelectedSet(setsWithQuiz[0]);
+            const matched = requestedSetId
+              ? setsWithQuiz.find((s) => s.id === requestedSetId)
+              : null;
+            setSelectedSet(matched || setsWithQuiz[0]);
           }
         }
       } catch (err) {
@@ -36,14 +42,13 @@ export default function QuizzesHubPage() {
   const handleSubmitAttempt = async (answersPayload) => {
     if (!selectedSet?.id) return;
 
-    try {
-      await fetch(`/api/study-sets/${selectedSet.id}/attempts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: answersPayload }),
-      });
-    } catch (err) {
-      console.error("Failed to submit attempt:", err);
+    const res = await fetch(`/api/study-sets/${selectedSet.id}/attempts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: answersPayload }),
+    });
+    if (!res.ok) {
+      throw new Error("Failed to save quiz attempt");
     }
   };
 
@@ -104,11 +109,22 @@ export default function QuizzesHubPage() {
           <p className="text-xl font-hand text-slate-600">Loading quiz questions...</p>
         </div>
       ) : selectedSet && selectedSet.quiz?.length > 0 ? (
-        <QuizPlayer
-          questions={selectedSet.quiz}
-          title={selectedSet.title}
-          onSubmitAttempt={handleSubmitAttempt}
-        />
+        <div className="space-y-4">
+          <div className="flex justify-end px-2">
+            <Link
+              href={`/study/${selectedSet.id}`}
+              className="text-base font-bold font-hand text-yellow-700 hover:underline"
+            >
+              Full Study Mode →
+            </Link>
+          </div>
+          <QuizPlayer
+            key={selectedSet.id}
+            questions={selectedSet.quiz}
+            title={selectedSet.title}
+            onSubmitAttempt={handleSubmitAttempt}
+          />
+        </div>
       ) : (
         <div className="bg-white p-12 wobbly-border hard-shadow text-center space-y-4 max-w-xl mx-auto">
           <BookOpen className="w-16 h-16 text-yellow-400 mx-auto" />

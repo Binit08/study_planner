@@ -112,9 +112,8 @@ export default function GenerationForm({
       {/* Form Card (7 cols) */}
       <div className="lg:col-span-7">
         <div
-          className={`bg-white p-6 sm:p-8 relative transition-all duration-300 wobbly-border hard-shadow tape-effect ${
-            isLoading ? "opacity-60 pointer-events-none" : ""
-          }`}
+          className={`bg-white p-6 sm:p-8 relative transition-all duration-300 wobbly-border hard-shadow tape-effect ${isLoading ? "opacity-60 pointer-events-none" : ""
+            }`}
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 1. Feed me your notes */}
@@ -206,33 +205,30 @@ export default function GenerationForm({
                   <button
                     type="button"
                     onClick={() => setMode("both")}
-                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold rotate-1 transition-all ${
-                      mode === "both"
+                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold rotate-1 transition-all ${mode === "both"
                         ? "border-[#2d2d2d] bg-yellow-200 hard-shadow-sm"
                         : "border-slate-300 bg-white hover:bg-yellow-50"
-                    }`}
+                      }`}
                   >
                     Both
                   </button>
                   <button
                     type="button"
                     onClick={() => setMode("cards")}
-                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold -rotate-1 transition-all ${
-                      mode === "cards"
+                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold -rotate-1 transition-all ${mode === "cards"
                         ? "border-[#2d2d2d] bg-yellow-200 hard-shadow-sm"
                         : "border-slate-300 bg-white hover:bg-yellow-50"
-                    }`}
+                      }`}
                   >
                     Cards
                   </button>
                   <button
                     type="button"
                     onClick={() => setMode("quiz")}
-                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold rotate-2 transition-all ${
-                      mode === "quiz"
+                    className={`flex-1 py-1.5 px-2 border-2 text-base font-bold rotate-2 transition-all ${mode === "quiz"
                         ? "border-[#2d2d2d] bg-yellow-200 hard-shadow-sm"
                         : "border-slate-300 bg-white hover:bg-yellow-50"
-                    }`}
+                      }`}
                   >
                     Quiz
                   </button>
@@ -247,11 +243,10 @@ export default function GenerationForm({
                       <span
                         key={num}
                         onClick={() => setItemCount(num)}
-                        className={`cursor-pointer px-1.5 py-0.5 rounded transition-colors ${
-                          itemCount === num
+                        className={`cursor-pointer px-1.5 py-0.5 rounded transition-colors ${itemCount === num
                             ? "font-bold text-yellow-800 underline decoration-wavy decoration-yellow-500 bg-yellow-200"
                             : "hover:text-yellow-600 text-slate-600"
-                        }`}
+                          }`}
                       >
                         {num}
                       </span>
@@ -344,24 +339,22 @@ export default function GenerationForm({
                 return (
                   <div key={idx} className="flex items-center gap-3 relative z-10">
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
-                        isPast
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${isPast
                           ? "bg-green-400 border-[#2d2d2d] text-[#2d2d2d]"
                           : isCurrent
-                          ? "bg-yellow-300 border-[#2d2d2d] text-[#2d2d2d] animate-bounce"
-                          : "bg-white border-slate-300 text-slate-400"
-                      }`}
+                            ? "bg-yellow-300 border-[#2d2d2d] text-[#2d2d2d] animate-bounce"
+                            : "bg-white border-slate-300 text-slate-400"
+                        }`}
                     >
                       {isPast ? <Check className="w-4 h-4" /> : idx + 1}
                     </div>
                     <span
-                      className={`text-base font-hand ${
-                        isCurrent
+                      className={`text-base font-hand ${isCurrent
                           ? "font-bold text-[#2d2d2d]"
                           : isPast
-                          ? "text-slate-600 line-through"
-                          : "text-slate-400"
-                      }`}
+                            ? "text-slate-600 line-through"
+                            : "text-slate-400"
+                        }`}
                     >
                       {step}
                     </span>

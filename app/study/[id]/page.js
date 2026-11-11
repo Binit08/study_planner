@@ -16,10 +16,12 @@ import {
   Award,
   FileText,
   FileUp,
+  Timer,
 } from "lucide-react";
 import FlashcardViewer from "@/components/flashcards/FlashcardViewer";
 import QuizPlayer from "@/components/quiz/QuizPlayer";
 import StudyChecklist from "@/components/checklist/StudyChecklist";
+import FocusTimer from "@/components/planner/FocusTimer";
 
 export default function StudySetDetailPage() {
   const params = useParams();
@@ -31,9 +33,11 @@ export default function StudySetDetailPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("flashcards");
   const [progressMap, setProgressMap] = useState({});
+  const [dueMap, setDueMap] = useState({});
   const [attempts, setAttempts] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [copiedMd, setCopiedMd] = useState(false);
+  const [showTimer, setShowTimer] = useState(false);
 
   const loadData = async () => {
     if (!id) return;
@@ -48,12 +52,20 @@ export default function StudySetDetailPage() {
       setAttempts(data.attempts || []);
       setChecklist(data.checklist || []);
 
-      // Build progress map from server data
+      // Build progress and due maps from server data
       const pMap = {};
+      const dMap = {};
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
       (data.progress || []).forEach((p) => {
         pMap[p.card_index] = p.status;
+        if (p.status !== "unseen" && p.next_review_at) {
+          dMap[p.card_index] = new Date(p.next_review_at).getTime() <= endOfToday.getTime();
+        }
       });
       setProgressMap(pMap);
+      setDueMap(dMap);
 
       // Default active tab based on available items
       if (data.flashcards?.length > 0) {
@@ -76,6 +88,7 @@ export default function StudySetDetailPage() {
 
   const handleUpdateCardProgress = async (cardIndex, status) => {
     setProgressMap((prev) => ({ ...prev, [cardIndex]: status }));
+    setDueMap((prev) => ({ ...prev, [cardIndex]: false }));
     try {
       await fetch(`/api/study-sets/${id}/progress`, {
         method: "POST",
@@ -121,12 +134,17 @@ export default function StudySetDetailPage() {
     }
   };
 
-  const handleAddChecklist = async (task) => {
+  const handleAddChecklist = async (payload) => {
+    const body =
+      typeof payload === "string"
+        ? { task: payload, studySetId: id }
+        : { ...payload, studySetId: id };
+
     try {
       const res = await fetch("/api/checklist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task, studySetId: id }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       if (json.data) {
@@ -134,6 +152,27 @@ export default function StudySetDetailPage() {
       }
     } catch (err) {
       console.error("Failed to add checklist item:", err);
+    }
+  };
+
+  const handleScheduleChecklistToday = async (itemId) => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
+
+    setChecklist((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, scheduled_date: todayStr } : i))
+    );
+
+    try {
+      await fetch(`/api/checklist/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledDate: todayStr }),
+      });
+    } catch (err) {
+      console.error("Failed to schedule checklist item:", err);
     }
   };
 
@@ -257,10 +296,22 @@ export default function StudySetDetailPage() {
           className="inline-flex items-center gap-2 text-xl font-bold font-hand text-slate-700 hover:text-yellow-700 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          ← Back to Study Library
+          Back to Study Library
         </Link>
 
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowTimer((prev) => !prev)}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-base transition-all text-slate-800 ${
+              showTimer ? "bg-yellow-300" : "bg-white hover:bg-yellow-50"
+            }`}
+            title="Toggle study focus timer"
+          >
+            <Timer className="w-4 h-4 text-yellow-700" />
+            {showTimer ? "Hide Timer" : "Focus Timer"}
+          </button>
+
           {flashcards.length > 0 && (
             <button
               type="button"
@@ -276,9 +327,8 @@ export default function StudySetDetailPage() {
           <button
             type="button"
             onClick={handleCopyMarkdown}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 bg-white wobbly-border-sm hard-shadow-sm font-bold font-hand text-base transition-all text-slate-800 ${
-              copiedMd ? "bg-green-100 border-green-700" : "hover:bg-yellow-50"
-            }`}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 bg-white wobbly-border-sm hard-shadow-sm font-bold font-hand text-base transition-all text-slate-800 ${copiedMd ? "bg-green-100 border-green-700" : "hover:bg-yellow-50"
+              }`}
             title="Copy complete study set to clipboard as Markdown"
           >
             {copiedMd ? <Check className="w-4 h-4 text-green-700" /> : <Copy className="w-4 h-4 text-slate-700" />}
@@ -295,6 +345,16 @@ export default function StudySetDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Optional Embedded Focus Timer */}
+      {showTimer && (
+        <div className="max-w-md ml-auto">
+          <FocusTimer
+            defaultStudySetId={studySet.id}
+            defaultTopic={studySet.topic || "General"}
+          />
+        </div>
+      )}
 
       {/* Hero Header Card */}
       <div className="bg-white p-8 wobbly-border hard-shadow relative rotate-[-0.5deg]">
@@ -352,11 +412,10 @@ export default function StudySetDetailPage() {
           {flashcards.length > 0 && (
             <button
               onClick={() => setActiveTab("flashcards")}
-              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
-                activeTab === "flashcards"
+              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${activeTab === "flashcards"
                   ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
                   : "bg-white hover:bg-yellow-50 text-slate-700"
-              }`}
+                }`}
             >
               <Layers className="w-5 h-5" />
               Flashcards ({flashcards.length})
@@ -366,11 +425,10 @@ export default function StudySetDetailPage() {
           {quiz.length > 0 && (
             <button
               onClick={() => setActiveTab("quiz")}
-              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
-                activeTab === "quiz"
+              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${activeTab === "quiz"
                   ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
                   : "bg-white hover:bg-yellow-50 text-slate-700"
-              }`}
+                }`}
             >
               <BookOpen className="w-5 h-5" />
               Quiz ({quiz.length})
@@ -379,11 +437,10 @@ export default function StudySetDetailPage() {
 
           <button
             onClick={() => setActiveTab("checklist")}
-            className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
-              activeTab === "checklist"
+            className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${activeTab === "checklist"
                 ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
                 : "bg-white hover:bg-yellow-50 text-slate-700"
-            }`}
+              }`}
           >
             <CheckSquare className="w-5 h-5" />
             Checklist ({checklist.length})
@@ -392,11 +449,10 @@ export default function StudySetDetailPage() {
           {attempts.length > 0 && (
             <button
               onClick={() => setActiveTab("history")}
-              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${
-                activeTab === "history"
+              className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-3 wobbly-border-sm font-bold font-hand text-xl transition-all ${activeTab === "history"
                   ? "bg-yellow-300 hard-shadow-sm -rotate-1 text-slate-900"
                   : "bg-white hover:bg-yellow-50 text-slate-700"
-              }`}
+                }`}
             >
               <Award className="w-5 h-5" />
               History ({attempts.length})
@@ -413,6 +469,7 @@ export default function StudySetDetailPage() {
               cards={flashcards}
               title={studySet.title}
               progressMap={progressMap}
+              dueMap={dueMap}
               onUpdateProgress={handleUpdateCardProgress}
             />
           </div>
@@ -431,9 +488,11 @@ export default function StudySetDetailPage() {
         <div className={activeTab === "checklist" ? "block max-w-2xl mx-auto" : "hidden"}>
           <StudyChecklist
             items={checklist}
+            showScheduleControls={true}
             onToggleItem={handleToggleChecklist}
             onAddItem={handleAddChecklist}
             onDeleteItem={handleDeleteChecklist}
+            onScheduleToday={handleScheduleChecklistToday}
           />
         </div>
 
@@ -465,11 +524,10 @@ export default function StudySetDetailPage() {
                           Score: {att.score} / {att.total_questions}
                         </span>
                         <span
-                          className={`px-3 py-0.5 rounded text-xs font-bold uppercase ${
-                            passed
+                          className={`px-3 py-0.5 rounded text-xs font-bold uppercase ${passed
                               ? "bg-green-100 text-green-800 border border-green-600"
                               : "bg-yellow-100 text-yellow-800 border border-yellow-600"
-                          }`}
+                            }`}
                         >
                           {passed ? "Passed" : "Needs Review"}
                         </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   RotateCw,
   ChevronLeft,
@@ -19,6 +19,8 @@ export default function FlashcardViewer({
   cards = [],
   flashcards = [],
   progressMap = {},
+  dueMap = {},
+  initialFilter = "all",
   onUpdateProgress,
   onRefineCard,
   title = "Flashcard Session",
@@ -27,13 +29,21 @@ export default function FlashcardViewer({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [filter, setFilter] = useState("all"); // "all" | "learning" | "unseen" | "mastered"
+  const [filter, setFilter] = useState(initialFilter); // "all" | "due" | "learning" | "unseen" | "mastered"
   const [cardOrder, setCardOrder] = useState([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const hasRatedInSessionRef = useRef(false);
 
   useEffect(() => {
+    setFilter(initialFilter || "all");
+  }, [initialFilter]);
+
+  useEffect(() => {
+    hasRatedInSessionRef.current = false;
     let indices = deck.map((_, i) => i);
-    if (filter !== "all") {
+    if (filter === "due") {
+      indices = indices.filter((i) => Boolean(dueMap[i]));
+    } else if (filter !== "all") {
       indices = indices.filter((i) => {
         const status = progressMap[i] || "unseen";
         return status === filter;
@@ -43,7 +53,24 @@ export default function FlashcardViewer({
     setCurrentIndex(0);
     setIsFlipped(false);
     setShowHint(false);
-  }, [deck, filter, progressMap]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deck, filter]);
+
+  // Sync filtered queue when async progressMap/dueMap arrives before user starts rating
+  useEffect(() => {
+    if (hasRatedInSessionRef.current) return;
+    let indices = deck.map((_, i) => i);
+    if (filter === "due") {
+      indices = indices.filter((i) => Boolean(dueMap[i]));
+    } else if (filter !== "all") {
+      indices = indices.filter((i) => {
+        const status = progressMap[i] || "unseen";
+        return status === filter;
+      });
+    }
+    setCardOrder(indices);
+    setCurrentIndex(0);
+  }, [deck, filter, progressMap, dueMap]);
 
   const activeIndex = cardOrder[currentIndex];
   const currentCard = activeIndex !== undefined ? deck[activeIndex] : null;
@@ -79,6 +106,7 @@ export default function FlashcardViewer({
 
   const handleSetStatus = useCallback(
     (status) => {
+      hasRatedInSessionRef.current = true;
       if (activeIndex !== undefined && onUpdateProgress) {
         onUpdateProgress(activeIndex, status);
       }
@@ -151,6 +179,7 @@ export default function FlashcardViewer({
   const masteredCount = deck.filter((_, i) => progressMap[i] === "mastered").length;
   const learningCount = deck.filter((_, i) => progressMap[i] === "learning").length;
   const unseenCount = deck.length - masteredCount - learningCount;
+  const dueCount = deck.filter((_, i) => Boolean(dueMap[i])).length;
 
   if (!deck || deck.length === 0) {
     return (
@@ -191,11 +220,11 @@ export default function FlashcardViewer({
         <div className="w-full h-3 bg-white rounded-full overflow-hidden flex border-2 border-[#2d2d2d] hard-shadow-sm">
           <div
             className="h-full bg-green-400 transition-all duration-300"
-            style={{ width: `${(masteredCount / cards.length) * 100}%` }}
+            style={{ width: `${deck.length > 0 ? (masteredCount / deck.length) * 100 : 0}%` }}
           />
           <div
             className="h-full bg-yellow-300 transition-all duration-300"
-            style={{ width: `${(learningCount / cards.length) * 100}%` }}
+            style={{ width: `${deck.length > 0 ? (learningCount / deck.length) * 100 : 0}%` }}
           />
         </div>
       </div>
@@ -204,7 +233,8 @@ export default function FlashcardViewer({
       <div className="flex items-center justify-between border-b-2 border-dashed border-[#2d2d2d]/30 pb-3 font-hand">
         <div className="flex items-center gap-2 text-base flex-wrap">
           {[
-            { id: "all", label: `All (${cards.length})` },
+            { id: "all", label: `All (${deck.length})` },
+            { id: "due", label: `Due Today (${dueCount})` },
             { id: "learning", label: `Needs Review (${learningCount})` },
             { id: "unseen", label: `Unseen (${unseenCount})` },
             { id: "mastered", label: `Mastered (${masteredCount})` },
@@ -212,11 +242,10 @@ export default function FlashcardViewer({
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id)}
-              className={`px-3 py-1 rounded-lg border-2 transition-all font-bold ${
-                filter === tab.id
+              className={`px-3 py-1 rounded-lg border-2 transition-all font-bold ${filter === tab.id
                   ? "border-[#2d2d2d] bg-yellow-300 hard-shadow-sm"
                   : "border-transparent bg-white hover:border-slate-300"
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -237,9 +266,8 @@ export default function FlashcardViewer({
           className="relative min-h-[300px] sm:min-h-[330px] rounded-2xl cursor-pointer select-none perspective-1000"
         >
           <div
-            className={`flip-card-inner min-h-[300px] sm:min-h-[330px] ${
-              isFlipped ? "flipped" : ""
-            }`}
+            className={`flip-card-inner min-h-[300px] sm:min-h-[330px] ${isFlipped ? "flipped" : ""
+              }`}
           >
             {/* FRONT FACE (White Paper Card with wobbly border) */}
             <div className="flip-card-front w-full min-h-[300px] sm:min-h-[330px] bg-white p-6 sm:p-8 wobbly-border-sm hard-shadow flex flex-col justify-between items-center rotate-1 relative transition-colors">
@@ -252,9 +280,8 @@ export default function FlashcardViewer({
                   <button
                     type="button"
                     onClick={handleToggleSpeak}
-                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${
-                      isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
-                    }`}
+                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
+                      }`}
                     title="Read out loud"
                   >
                     {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -311,9 +338,8 @@ export default function FlashcardViewer({
                   <button
                     type="button"
                     onClick={handleToggleSpeak}
-                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${
-                      isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
-                    }`}
+                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
+                      }`}
                     title="Read out loud"
                   >
                     {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}

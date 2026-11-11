@@ -9,6 +9,7 @@ export default function Navbar() {
 
   const navItems = [
     { href: "/", id: "generate", label: "Generate" },
+    { href: "/planner", id: "planner", label: "Planner" },
     { href: "/flashcards", id: "flashcards", label: "Flashcards" },
     { href: "/quizzes", id: "quizzes", label: "Quizzes" },
     { href: "/history", id: "library", label: "Library" },
@@ -30,7 +31,7 @@ export default function Navbar() {
       </Link>
 
       {/* Navigation Links */}
-      <div className="flex gap-4 sm:gap-6 items-center text-lg sm:text-xl font-hand">
+      <div className="flex flex-wrap gap-3 sm:gap-5 items-center text-base sm:text-xl font-hand">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const isLibrary = item.id === "library";
@@ -40,9 +41,8 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-4 py-1 bg-white border-2 border-[#2d2d2d] wobbly-border-sm hard-shadow-sm font-bold transition-all hover:bg-yellow-50 hover:translate-x-0.5 hover:translate-y-0.5 ${
-                  isActive ? "bg-yellow-200 text-yellow-800" : "text-[#2d2d2d]"
-                }`}
+                className={`px-4 py-1 bg-white border-2 border-[#2d2d2d] wobbly-border-sm hard-shadow-sm font-bold transition-all hover:bg-yellow-50 hover:translate-x-0.5 hover:translate-y-0.5 ${isActive ? "bg-yellow-200 text-yellow-800" : "text-[#2d2d2d]"
+                  }`}
               >
                 {item.label}
               </Link>
@@ -53,11 +53,10 @@ export default function Navbar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`hover:text-yellow-600 transition-all font-bold pb-0.5 ${
-                isActive
+              className={`hover:text-yellow-600 transition-all font-bold pb-0.5 ${isActive
                   ? "text-yellow-600 border-b-2 border-dashed border-[#2d2d2d]"
                   : "text-[#2d2d2d] border-b-2 border-transparent hover:border-dashed hover:border-[#2d2d2d]"
-              }`}
+                }`}
             >
               {item.label}
             </Link>

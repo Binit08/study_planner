@@ -262,9 +262,8 @@ export default function GenerationPreview({
               <button
                 type="button"
                 onClick={handleCopyMarkdown}
-                className={`flex flex-col items-center justify-center p-3 border-2 border-slate-800 wobbly-border-sm hard-shadow-sm transition-all font-bold text-sm uppercase ${
-                  copiedMd ? "bg-green-200" : "bg-white hover:bg-yellow-50"
-                }`}
+                className={`flex flex-col items-center justify-center p-3 border-2 border-slate-800 wobbly-border-sm hard-shadow-sm transition-all font-bold text-sm uppercase ${copiedMd ? "bg-green-200" : "bg-white hover:bg-yellow-50"
+                  }`}
                 title="Copy formatted Markdown"
               >
                 {copiedMd ? (
@@ -301,11 +300,10 @@ export default function GenerationPreview({
               <button
                 type="button"
                 onClick={() => setActiveView("flashcards")}
-                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all rotate-1 ${
-                  activeView === "flashcards"
+                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all rotate-1 ${activeView === "flashcards"
                     ? "bg-yellow-400 hard-shadow-sm scale-105"
                     : "bg-white hover:bg-yellow-50"
-                }`}
+                  }`}
               >
                 Flashcards ({flashcards.length})
               </button>
@@ -315,11 +313,10 @@ export default function GenerationPreview({
               <button
                 type="button"
                 onClick={() => setActiveView("quiz")}
-                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all -rotate-1 ${
-                  activeView === "quiz"
+                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all -rotate-1 ${activeView === "quiz"
                     ? "bg-yellow-400 hard-shadow-sm scale-105"
                     : "bg-white hover:bg-yellow-50"
-                }`}
+                  }`}
               >
                 Quiz ({quiz.length})
               </button>
@@ -329,11 +326,10 @@ export default function GenerationPreview({
               <button
                 type="button"
                 onClick={() => setActiveView("checklist")}
-                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all rotate-1 ${
-                  activeView === "checklist"
+                className={`px-6 py-2.5 font-bold text-xl font-hand wobbly-border-sm transition-all rotate-1 ${activeView === "checklist"
                     ? "bg-yellow-400 hard-shadow-sm scale-105"
                     : "bg-white hover:bg-yellow-50"
-                }`}
+                  }`}
               >
                 Checklist ({doneChecklistCount}/{checklistItems.length})
               </button>

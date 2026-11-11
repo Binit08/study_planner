@@ -84,9 +84,8 @@ export default function HistoryPage() {
               <button
                 type="button"
                 onClick={() => setTopicFilter("all")}
-                className={`px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-lg transition-all ${
-                  topicFilter === "all" ? "bg-yellow-300" : "bg-white hover:bg-yellow-50"
-                }`}
+                className={`px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-lg transition-all ${topicFilter === "all" ? "bg-yellow-300" : "bg-white hover:bg-yellow-50"
+                  }`}
               >
                 All Topics
               </button>
@@ -95,9 +94,8 @@ export default function HistoryPage() {
                   key={t}
                   type="button"
                   onClick={() => setTopicFilter(t)}
-                  className={`px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-lg transition-all ${
-                    topicFilter === t ? "bg-yellow-300" : "bg-white hover:bg-yellow-50"
-                  }`}
+                  className={`px-4 py-2 wobbly-border-sm hard-shadow-sm font-bold font-hand text-lg transition-all ${topicFilter === t ? "bg-yellow-300" : "bg-white hover:bg-yellow-50"
+                    }`}
                 >
                   {t}
                 </button>
