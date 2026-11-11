@@ -1,20 +1,14 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
-import { z } from "zod";
-
-const FlashcardSchema = z.object({
-  id: z.string().optional(),
-  front: z.string().min(1).trim(),
-  back: z.string().min(1).trim(),
-});
-
-const QuizQuestionSchema = z.object({
-  id: z.string().optional(),
-  question: z.string().min(1).trim(),
-  options: z.array(z.string().min(1).trim()).length(4),
-  correctAnswerIndex: z.number().int().min(0).max(3),
-  explanation: z.string().min(1).trim(),
-});
+import {
+  FlashcardSchema,
+  QuizQuestionSchema,
+  ChecklistCreateSchema,
+  ChecklistUpdateSchema,
+  StudyGoalCreateSchema,
+  StudyGoalUpdateSchema,
+  StudySessionCreateSchema,
+} from "../lib/schemas/studySet.js";
 
 describe("Zod Runtime Schemas", () => {
   test("FlashcardSchema passes for valid card", () => {
@@ -52,5 +46,62 @@ describe("Zod Runtime Schemas", () => {
     };
     const res = QuizQuestionSchema.safeParse(invalid);
     assert.strictEqual(res.success, false);
+  });
+
+  test("ChecklistCreateSchema validates scheduling, priority, and duration", () => {
+    const valid = ChecklistCreateSchema.safeParse({
+      task: "Review Big O",
+      scheduledDate: "2026-11-11",
+      priority: "high",
+      estimatedMinutes: 30,
+    });
+    assert.strictEqual(valid.success, true);
+    assert.strictEqual(valid.data.priority, "high");
+
+    const badDate = ChecklistCreateSchema.safeParse({
+      task: "Review Big O",
+      scheduledDate: "11/11/2026",
+    });
+    assert.strictEqual(badDate.success, false);
+  });
+
+  test("ChecklistUpdateSchema allows partial updates", () => {
+    const res = ChecklistUpdateSchema.safeParse({ completed: true, priority: "low" });
+    assert.strictEqual(res.success, true);
+
+    const badDuration = ChecklistUpdateSchema.safeParse({ estimatedMinutes: 2 });
+    assert.strictEqual(badDuration.success, false);
+  });
+
+  test("StudyGoalCreateSchema & StudyGoalUpdateSchema validate exam goals", () => {
+    const valid = StudyGoalCreateSchema.safeParse({
+      title: "Algorithms Midterm",
+      examDate: "2026-11-20",
+      dailyMinutes: 45,
+    });
+    assert.strictEqual(valid.success, true);
+    assert.strictEqual(valid.data.topic, "General");
+
+    const invalidDate = StudyGoalCreateSchema.safeParse({
+      title: "Algorithms Midterm",
+      examDate: "invalid",
+    });
+    assert.strictEqual(invalidDate.success, false);
+
+    const toggle = StudyGoalUpdateSchema.safeParse({ completed: true });
+    assert.strictEqual(toggle.success, true);
+  });
+
+  test("StudySessionCreateSchema validates focus timer duration and activity type", () => {
+    const valid = StudySessionCreateSchema.safeParse({
+      durationMinutes: 25,
+      activityType: "focus",
+    });
+    assert.strictEqual(valid.success, true);
+
+    const zeroMins = StudySessionCreateSchema.safeParse({
+      durationMinutes: 0,
+    });
+    assert.strictEqual(zeroMins.success, false);
   });
 });

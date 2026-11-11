@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -22,6 +22,8 @@ import FlashcardViewer from "@/components/flashcards/FlashcardViewer";
 import QuizPlayer from "@/components/quiz/QuizPlayer";
 import StudyChecklist from "@/components/checklist/StudyChecklist";
 import FocusTimer from "@/components/planner/FocusTimer";
+import StudyAttemptsList from "@/components/study/StudyAttemptsList";
+import { buildStudySetMarkdown, downloadAnkiCsv } from "@/lib/exportStudySet";
 
 export default function StudySetDetailPage() {
   const params = useParams();
@@ -38,8 +40,11 @@ export default function StudySetDetailPage() {
   const [checklist, setChecklist] = useState([]);
   const [copiedMd, setCopiedMd] = useState(false);
   const [showTimer, setShowTimer] = useState(false);
+  const [actionError, setActionError] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
@@ -80,11 +85,11 @@ export default function StudySetDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadData();
-  }, [id]);
+  }, [loadData]);
 
   const handleUpdateCardProgress = async (cardIndex, status) => {
     setProgressMap((prev) => ({ ...prev, [cardIndex]: status }));
@@ -188,72 +193,43 @@ export default function StudySetDetailPage() {
   };
 
   const handleExportAnki = () => {
-    if (!flashcards || flashcards.length === 0) return;
-    const rows = [
-      "#separator:comma",
-      "#html:false",
-      ...flashcards.map((c) => {
-        const front = `"${(c.front || "").replace(/"/g, '""')}"`;
-        const back = `"${(c.back || "").replace(/"/g, '""')}"`;
-        return `${front},${back}`;
-      }),
-    ];
-    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join("\n"));
-    const link = document.createElement("a");
-    link.setAttribute("href", csvContent);
-    const filename = `${(studySet?.title || "study-set").toLowerCase().replace(/[^a-z0-9]/g, "-")}-anki.csv`;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadAnkiCsv(flashcards, studySet?.title);
   };
 
   const handleCopyMarkdown = async () => {
-    let md = `# ${studySet?.title || "Study Set"}\nTopic: ${studySet?.topic || "General"}\n\n`;
-    if (studySet?.source_preview) md += `> ${studySet.source_preview}\n\n`;
-
-    if (flashcards.length > 0) {
-      md += `## 📚 Flashcards (${flashcards.length})\n\n`;
-      flashcards.forEach((card, idx) => {
-        md += `### Card ${idx + 1}\n**Q:** ${card.front}\n**A:** ${card.back}\n\n`;
-      });
-    }
-
-    if (quiz.length > 0) {
-      md += `## 📝 Quiz Assessment (${quiz.length} Questions)\n\n`;
-      quiz.forEach((q, idx) => {
-        md += `### Q${idx + 1}: ${q.question}\n`;
-        q.options.forEach((opt, oIdx) => {
-          const isCorrect = oIdx === q.correctAnswerIndex;
-          md += `- [${isCorrect ? "x" : " "}] ${opt}${isCorrect ? " *(Correct)*" : ""}\n`;
-        });
-        if (q.explanation) md += `\n*Explanation:* ${q.explanation}\n\n`;
-      });
-    }
-
-    if (checklist.length > 0) {
-      md += `## ✅ Mastery Checklist\n\n`;
-      checklist.forEach((item) => {
-        md += `- [${item.completed ? "x" : " "}] ${item.task}\n`;
-      });
-    }
+    const md = buildStudySetMarkdown({
+      title: studySet?.title,
+      topic: studySet?.topic,
+      summary: studySet?.source_preview,
+      flashcards,
+      quiz,
+      checklist,
+    });
 
     try {
+      setActionError(null);
       await navigator.clipboard.writeText(md);
       setCopiedMd(true);
       setTimeout(() => setCopiedMd(false), 2200);
     } catch {
-      alert("Unable to copy to clipboard.");
+      setActionError("Unable to copy to clipboard. Check browser clipboard permissions.");
     }
   };
 
   const handleDeleteSet = async () => {
-    if (!window.confirm(`Are you sure you want to delete "${studySet?.title}"?`)) return;
+    setDeleting(true);
+    setActionError(null);
     try {
-      await fetch(`/api/study-sets/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/study-sets/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || "Failed to delete study set");
+      }
       router.push("/history");
     } catch (err) {
-      alert(err.message);
+      setActionError(err.message);
+      setConfirmDelete(false);
+      setDeleting(false);
     }
   };
 
@@ -335,16 +311,52 @@ export default function StudySetDetailPage() {
             {copiedMd ? "Copied!" : "Copy MD"}
           </button>
 
-          <button
-            onClick={handleDeleteSet}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white wobbly-border-sm text-slate-400 hover:text-red-500 hover:border-red-500 transition-colors font-bold font-hand text-base"
-            title="Delete this study set"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
+          {confirmDelete ? (
+            <div className="inline-flex items-center gap-2 bg-rose-50 px-3 py-1.5 wobbly-border-sm border-2 border-rose-500">
+              <span className="font-hand text-sm font-bold text-rose-900">Delete deck?</span>
+              <button
+                type="button"
+                onClick={handleDeleteSet}
+                disabled={deleting}
+                className="px-2.5 py-0.5 bg-rose-600 text-white rounded font-hand font-bold text-sm hover:bg-rose-700 disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Confirm"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="px-2 py-0.5 bg-white border border-slate-300 rounded font-hand font-bold text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-white wobbly-border-sm text-slate-400 hover:text-red-500 hover:border-red-500 transition-colors font-bold font-hand text-base"
+              title="Delete this study set"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
+          )}
         </div>
       </div>
+
+      {actionError && (
+        <div className="bg-rose-50 border-2 border-rose-500 p-4 wobbly-border-sm flex items-center justify-between gap-4">
+          <p className="font-hand text-base text-rose-800 font-bold">{actionError}</p>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="text-sm font-hand font-bold text-rose-700 hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Optional Embedded Focus Timer */}
       {showTimer && (
@@ -496,52 +508,7 @@ export default function StudySetDetailPage() {
           />
         </div>
 
-        {activeTab === "history" && (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="border-b-2 border-dashed border-slate-200 pb-3">
-              <h3 className="text-2xl font-bold font-hand text-slate-900 flex items-center gap-2">
-                <Award className="w-6 h-6 text-yellow-600" />
-                Past Quiz Submissions
-              </h3>
-            </div>
-
-            <div className="space-y-4">
-              {attempts.map((att, idx) => {
-                const pct = Math.round((att.score / att.total_questions) * 100);
-                const passed = pct >= 70;
-                const dateStr = att.created_at
-                  ? new Date(att.created_at).toLocaleString()
-                  : "Recent";
-
-                return (
-                  <div
-                    key={att.id || idx}
-                    className="bg-white p-5 wobbly-border-sm hard-shadow-sm flex items-center justify-between gap-4"
-                  >
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl font-bold font-hand text-slate-900">
-                          Score: {att.score} / {att.total_questions}
-                        </span>
-                        <span
-                          className={`px-3 py-0.5 rounded text-xs font-bold uppercase ${passed
-                              ? "bg-green-100 text-green-800 border border-green-600"
-                              : "bg-yellow-100 text-yellow-800 border border-yellow-600"
-                            }`}
-                        >
-                          {passed ? "Passed" : "Needs Review"}
-                        </span>
-                      </div>
-                      <p className="text-sm font-hand text-slate-400 mt-1">{dateStr}</p>
-                    </div>
-
-                    <span className="text-3xl font-bold font-hand text-slate-900">{pct}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {activeTab === "history" && <StudyAttemptsList attempts={attempts} />}
       </div>
     </div>
   );

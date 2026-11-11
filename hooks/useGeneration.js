@@ -12,6 +12,7 @@ export function useGeneration() {
   // Stale response tracking & request cancellation
   const abortControllerRef = useRef(null);
   const latestRequestIdRef = useRef(0);
+  const originalSourceTextRef = useRef("");
 
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -39,6 +40,9 @@ export function useGeneration() {
       setStatus("loading");
       setError(null);
       setLastParams({ text, file, mode, targetCount, refinementPrompt, existingSet });
+      if (!refinementPrompt) {
+        originalSourceTextRef.current = text ? String(text).slice(0, 8000) : "";
+      }
 
       try {
         let response;
@@ -84,7 +88,9 @@ export function useGeneration() {
         }
 
         setData(json.data);
-        setSourceMeta(json.source || { type: file ? "pdf" : "text", name: file?.name || null });
+        if (!refinementPrompt) {
+          setSourceMeta(json.source || { type: file ? "pdf" : "text", name: file?.name || null });
+        }
         setStatus("success");
         return json.data;
       } catch (err) {
@@ -120,11 +126,25 @@ export function useGeneration() {
   const refine = useCallback(
     (prompt) => {
       if (!data) return;
+      const currentCount = Math.min(
+        20,
+        Math.max(data.flashcards?.length || 0, data.quiz?.length || 0, 6)
+      );
+      const sourceContext = originalSourceTextRef.current
+        ? `Refine existing study set "${data.title || "Untitled Study Set"}" using original source notes:\n${originalSourceTextRef.current}`
+        : `Refine existing study set: ${data.title || "Untitled Study Set"}`;
       return generate({
-        text: "Refinement",
+        text: sourceContext,
         mode: data.mode || "both",
+        targetCount: currentCount,
         refinementPrompt: prompt,
-        existingSet: data,
+        existingSet: {
+          title: data.title,
+          topic: data.topic,
+          summary: data.summary,
+          flashcards: data.flashcards,
+          quiz: data.quiz,
+        },
       });
     },
     [data, generate]
@@ -137,6 +157,7 @@ export function useGeneration() {
     setError(null);
     setStatus("idle");
     setLastParams(null);
+    originalSourceTextRef.current = "";
   }, [cancel]);
 
   return {

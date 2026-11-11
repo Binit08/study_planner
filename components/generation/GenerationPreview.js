@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Sparkles,
@@ -20,6 +20,7 @@ import FlashcardViewer from "@/components/flashcards/FlashcardViewer";
 import QuizPlayer from "@/components/quiz/QuizPlayer";
 import StudyChecklist from "@/components/checklist/StudyChecklist";
 import RefinementBar from "./RefinementBar";
+import { buildStudySetMarkdown, downloadAnkiCsv } from "@/lib/exportStudySet";
 
 export default function GenerationPreview({
   data,
@@ -37,6 +38,11 @@ export default function GenerationPreview({
   const [historyStack, setHistoryStack] = useState([]);
   const [versionNumber, setVersionNumber] = useState(1);
   const [lastRefinementNote, setLastRefinementNote] = useState(null);
+  const [actionError, setActionError] = useState(null);
+
+  useEffect(() => {
+    setChecklistItems(data?.checklist || []);
+  }, [data]);
 
   const flashcards = data?.flashcards || [];
   const quiz = data?.quiz || [];
@@ -57,63 +63,27 @@ export default function GenerationPreview({
 
   // Anki Export
   const handleExportAnki = () => {
-    if (!flashcards || flashcards.length === 0) return;
-    const rows = [
-      "#separator:comma",
-      "#html:false",
-      ...flashcards.map((c) => {
-        const front = `"${(c.front || "").replace(/"/g, '""')}"`;
-        const back = `"${(c.back || "").replace(/"/g, '""')}"`;
-        return `${front},${back}`;
-      }),
-    ];
-    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join("\n"));
-    const link = document.createElement("a");
-    link.setAttribute("href", csvContent);
-    const filename = `${(data?.title || "study-set").toLowerCase().replace(/[^a-z0-9]/g, "-")}-anki.csv`;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadAnkiCsv(flashcards, data?.title);
   };
 
   // Copy Markdown
   const handleCopyMarkdown = async () => {
-    let md = `# ${data?.title || "Study Set"}\nTopic: ${data?.topic || "General"}\n\n`;
-    if (data?.summary) md += `> ${data.summary}\n\n`;
-
-    if (flashcards.length > 0) {
-      md += `## 📚 Flashcards (${flashcards.length})\n\n`;
-      flashcards.forEach((card, idx) => {
-        md += `### Card ${idx + 1}\n**Q:** ${card.front}\n**A:** ${card.back}\n\n`;
-      });
-    }
-
-    if (quiz.length > 0) {
-      md += `## 📝 Quiz Assessment (${quiz.length} Questions)\n\n`;
-      quiz.forEach((q, idx) => {
-        md += `### Q${idx + 1}: ${q.question}\n`;
-        q.options.forEach((opt, oIdx) => {
-          const isCorrect = oIdx === q.correctAnswerIndex;
-          md += `- [${isCorrect ? "x" : " "}] ${opt}${isCorrect ? " *(Correct)*" : ""}\n`;
-        });
-        if (q.explanation) md += `\n*Explanation:* ${q.explanation}\n\n`;
-      });
-    }
-
-    if (checklistItems.length > 0) {
-      md += `## ✅ Mastery Checklist\n\n`;
-      checklistItems.forEach((item) => {
-        md += `- [${item.completed ? "x" : " "}] ${item.task}\n`;
-      });
-    }
+    const md = buildStudySetMarkdown({
+      title: data?.title,
+      topic: data?.topic,
+      summary: data?.summary,
+      flashcards,
+      quiz,
+      checklist: checklistItems,
+    });
 
     try {
+      setActionError(null);
       await navigator.clipboard.writeText(md);
       setCopiedMd(true);
       setTimeout(() => setCopiedMd(false), 2200);
     } catch {
-      alert("Unable to copy to clipboard.");
+      setActionError("Unable to copy to clipboard. Check browser clipboard permissions.");
     }
   };
 
@@ -139,6 +109,7 @@ export default function GenerationPreview({
 
   const handleSaveToLibrary = async () => {
     setIsSaving(true);
+    setActionError(null);
     try {
       const response = await fetch("/api/study-sets", {
         method: "POST",
@@ -162,7 +133,7 @@ export default function GenerationPreview({
 
       router.push(`/study/${json.data.id}`);
     } catch (err) {
-      alert(`Error saving study set: ${err.message}`);
+      setActionError(`Error saving study set: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -223,6 +194,19 @@ export default function GenerationPreview({
             </div>
 
             {/* Action buttons */}
+            {actionError && (
+              <div className="bg-rose-50 border-2 border-rose-500 p-3 wobbly-border-sm flex items-start justify-between gap-2">
+                <p className="text-sm font-hand font-bold text-rose-800">{actionError}</p>
+                <button
+                  type="button"
+                  onClick={() => setActionError(null)}
+                  className="text-xs font-hand font-bold text-rose-700 hover:underline flex-shrink-0"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
             <div className="pt-2 space-y-3">
               <button
                 type="button"

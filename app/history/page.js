@@ -9,6 +9,7 @@ export default function HistoryPage() {
   const [sets, setSets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionError, setActionError] = useState(null);
   const [search, setSearch] = useState("");
   const [topicFilter, setTopicFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -33,12 +34,13 @@ export default function HistoryPage() {
   }, []);
 
   const handleDelete = async (id) => {
+    setActionError(null);
     try {
       const res = await fetch(`/api/study-sets/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete study set");
       setSets((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
-      alert(err.message);
+      setActionError(err.message);
     }
   };
 
@@ -132,6 +134,19 @@ export default function HistoryPage() {
       </header>
 
       {/* Main Grid */}
+      {actionError && (
+        <div className="bg-rose-50 border-2 border-rose-500 p-4 wobbly-border-sm flex items-center justify-between gap-4">
+          <p className="font-hand text-lg text-rose-800 font-bold">{actionError}</p>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="text-sm font-hand font-bold text-rose-700 hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="py-20 text-center space-y-4">
           <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">

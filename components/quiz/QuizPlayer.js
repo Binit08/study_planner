@@ -1,17 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  CheckCircle2,
-  XCircle,
-  RotateCcw,
-  Award,
-  ChevronRight,
-  ChevronLeft,
-  HelpCircle,
-  Info,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Award, ChevronRight, ChevronLeft, Info } from "lucide-react";
 import FormattedContent from "@/components/ui/FormattedContent";
+import QuizResults from "./QuizResults";
 
 export default function QuizPlayer({
   questions = [],
@@ -26,6 +18,7 @@ export default function QuizPlayer({
   const [scoreSummary, setScoreSummary] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [attemptSaved, setAttemptSaved] = useState(false);
+  const [confirmingIncompleteSubmit, setConfirmingIncompleteSubmit] = useState(false);
 
   // Reset state only when the source questions array changes
   useEffect(() => {
@@ -36,17 +29,22 @@ export default function QuizPlayer({
     setIsRetestingWrongOnly(false);
     setScoreSummary(null);
     setAttemptSaved(false);
+    setConfirmingIncompleteSubmit(false);
   }, [questions]);
 
   const currentQ = activeQuestions[currentIndex];
 
-  const handleSelectOption = (optionIndex) => {
-    if (isSubmitted) return;
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [currentIndex]: optionIndex,
-    }));
-  };
+  const handleSelectOption = useCallback(
+    (optionIndex) => {
+      if (isSubmitted) return;
+      setConfirmingIncompleteSubmit(false);
+      setSelectedAnswers((prev) => ({
+        ...prev,
+        [currentIndex]: optionIndex,
+      }));
+    },
+    [currentIndex, isSubmitted]
+  );
 
   // Keyboard navigation for options (1, 2, 3, 4, Enter, Arrow keys)
   useEffect(() => {
@@ -68,16 +66,18 @@ export default function QuizPlayer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentIndex, activeQuestions.length, isSubmitted]);
+  }, [currentIndex, activeQuestions.length, isSubmitted, handleSelectOption]);
 
   const handleSubmit = async () => {
-    if (Object.keys(selectedAnswers).length < activeQuestions.length) {
-      const confirmSubmit = window.confirm(
-        `You have answered ${Object.keys(selectedAnswers).length} of ${activeQuestions.length} questions. Submit anyway?`
-      );
-      if (!confirmSubmit) return;
+    if (
+      Object.keys(selectedAnswers).length < activeQuestions.length &&
+      !confirmingIncompleteSubmit
+    ) {
+      setConfirmingIncompleteSubmit(true);
+      return;
     }
 
+    setConfirmingIncompleteSubmit(false);
     setSubmitting(true);
 
     const answersPayload = activeQuestions.map((q, idx) => ({
@@ -278,6 +278,31 @@ export default function QuizPlayer({
                 </button>
               )}
             </div>
+
+            {confirmingIncompleteSubmit && (
+              <div className="bg-amber-50 border-2 border-amber-400 wobbly-border-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="font-hand text-base text-amber-950 font-bold">
+                  You have answered {answeredCount} of {activeQuestions.length} questions. Submit anyway?
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingIncompleteSubmit(false)}
+                    className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-hand font-bold text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    Keep Answering
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="px-4 py-1.5 bg-yellow-400 border-2 border-slate-800 rounded-lg font-hand font-bold text-sm text-slate-900 hover:bg-yellow-300"
+                  >
+                    Submit Anyway
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Cheatsheet Sidebar */}
@@ -321,153 +346,15 @@ export default function QuizPlayer({
 
       {/* Post-Submission Results & Re-test Mode */}
       {isSubmitted && scoreSummary && (
-        <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
-          {/* Results Summary Card */}
-          <div
-            className={`bg-white p-8 wobbly-border hard-shadow text-center space-y-4 ${scoreSummary.passed ? "border-emerald-700" : "border-slate-800"
-              }`}
-          >
-            <div className="inline-flex p-4 rounded-2xl bg-yellow-100 wobbly-border-sm rotate-3">
-              <Award
-                className={`w-10 h-10 ${scoreSummary.passed ? "text-emerald-700" : "text-yellow-600"}`}
-              />
-            </div>
-
-            <div>
-              <div className="text-6xl font-bold font-hand text-slate-900 tracking-tight">
-                {scoreSummary.percentage}%
-              </div>
-              <p className="text-xl font-hand text-slate-700 mt-2">
-                You scored {scoreSummary.score} out of {scoreSummary.totalQuestions} questions correct.
-              </p>
-            </div>
-
-            <div className="inline-block px-4 py-1.5 bg-yellow-100 text-slate-900 font-bold text-base wobbly-border-sm">
-              {isRetestingWrongOnly
-                ? scoreSummary.passed
-                  ? "Mistake Drill Cleared 🎯"
-                  : "Keep Practicing Mistakes 📚"
-                : scoreSummary.passed
-                ? "Assessment Passed 🎉"
-                : "Needs Review 📚"}
-            </div>
-            {attemptSaved && (
-              <p className="text-sm font-hand font-bold text-emerald-700">
-                ✓ Score saved to study history
-              </p>
-            )}
-
-            {/* Action Buttons: Retest wrong answers or restart */}
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-6 border-t-2 border-dashed border-slate-200">
-              {scoreSummary.wrongQuestions.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleRetestWrong}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-300 text-slate-900 font-bold font-hand text-xl wobbly-border-sm hard-shadow-sm hover:bg-yellow-200 hover:translate-x-0.5 hover:translate-y-0.5 transition-all"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                  Re-test {scoreSummary.wrongQuestions.length} Mistake
-                  {scoreSummary.wrongQuestions.length > 1 ? "s" : ""}
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={handleResetFull}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-800 font-bold font-hand text-xl wobbly-border-sm hard-shadow-sm hover:bg-slate-50 transition-all"
-              >
-                <RotateCcw className="w-5 h-5" />
-                Retake Entire Quiz
-              </button>
-            </div>
-          </div>
-
-          {/* Breakdown of Each Question with Explanations */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b-2 border-dashed border-slate-300 pb-2">
-              <h3 className="text-2xl font-bold font-hand tracking-wide">
-                Detailed Question Review
-              </h3>
-              <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                {scoreSummary.wrongQuestions.length === 0 ? "Perfect Score!" : `${scoreSummary.wrongQuestions.length} to improve`}
-              </span>
-            </div>
-
-            {activeQuestions.map((q, idx) => {
-              const selectedOpt = selectedAnswers[idx];
-              const isCorrect = selectedOpt === q.correctAnswerIndex;
-
-              return (
-                <div
-                  key={idx}
-                  className={`bg-white p-6 wobbly-border-sm hard-shadow-sm space-y-4 ${isCorrect ? "border-emerald-600" : "border-rose-500"
-                    }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <h4 className="text-xl font-bold font-hand text-slate-900 leading-snug">
-                      <span className="text-slate-500 mr-2">#{idx + 1}</span>
-                      <FormattedContent text={q.question} />
-                    </h4>
-                    <div className="flex-shrink-0">
-                      {isCorrect ? (
-                        <CheckCircle2 className="w-7 h-7 text-emerald-600" />
-                      ) : (
-                        <XCircle className="w-7 h-7 text-rose-500" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Options display */}
-                  <div className="space-y-2 pt-1">
-                    {q.options.map((opt, optIdx) => {
-                      const isOptionCorrect = optIdx === q.correctAnswerIndex;
-                      const isOptionSelected = optIdx === selectedOpt;
-
-                      let styleClass = "border-2 border-slate-200 bg-slate-50/50 text-slate-700";
-                      if (isOptionCorrect) {
-                        styleClass = "border-2 border-emerald-600 bg-emerald-50 text-emerald-950 font-bold";
-                      } else if (isOptionSelected && !isOptionCorrect) {
-                        styleClass = "border-2 border-rose-500 bg-rose-50 text-rose-900 line-through font-semibold";
-                      }
-
-                      return (
-                        <div
-                          key={optIdx}
-                          className={`p-3.5 rounded-xl text-lg font-hand flex items-center justify-between gap-3 ${styleClass}`}
-                        >
-                          <div className="flex-1">
-                            <FormattedContent text={opt} />
-                          </div>
-                          {isOptionCorrect && (
-                            <span className="text-xs uppercase font-bold tracking-wider text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-600 flex-shrink-0">
-                              Correct Answer
-                            </span>
-                          )}
-                          {isOptionSelected && !isOptionCorrect && (
-                            <span className="text-xs uppercase font-bold tracking-wider text-rose-700 bg-white px-2 py-0.5 rounded border border-rose-500 flex-shrink-0">
-                              Your Choice
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Explanation Note */}
-                  {q.explanation && (
-                    <div className="p-4 rounded-xl bg-yellow-50/70 border-2 border-yellow-200 text-base font-hand text-slate-800 leading-relaxed flex items-start gap-3">
-                      <HelpCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <span className="font-bold text-slate-900 mr-1">Explanation:</span>
-                        <FormattedContent text={q.explanation} className="mt-1" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <QuizResults
+          scoreSummary={scoreSummary}
+          activeQuestions={activeQuestions}
+          selectedAnswers={selectedAnswers}
+          isRetestingWrongOnly={isRetestingWrongOnly}
+          attemptSaved={attemptSaved}
+          onRetestWrong={handleRetestWrong}
+          onResetFull={handleResetFull}
+        />
       )}
     </div>
   );

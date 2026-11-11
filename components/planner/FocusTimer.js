@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Timer, Play, Pause, RotateCcw, CheckCircle2 } from "lucide-react";
 
 const PRESETS = [
@@ -44,7 +44,7 @@ export default function FocusTimer({
     }
   }, [defaultStudySetId]);
 
-  const logSession = async (durationMinutes) => {
+  const logSession = useCallback(async (durationMinutes) => {
     setErrorBanner(null);
     if (selectedPreset.type === "break") {
       setLoggedBanner("Break finished! Ready for next sprint.");
@@ -80,7 +80,7 @@ export default function FocusTimer({
     } finally {
       setSaving(false);
     }
-  };
+  }, [selectedPreset.type, defaultTopic, onSessionLogged]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -101,7 +101,7 @@ export default function FocusTimer({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRunning, selectedPreset]);
+  }, [isRunning, selectedPreset.minutes, logSession]);
 
   const handleSelectPreset = (preset) => {
     setIsRunning(false);

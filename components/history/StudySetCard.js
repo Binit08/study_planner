@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { FileText, FileUp, Trash2, ArrowRight } from "lucide-react";
 
 export default function StudySetCard({ set, onDelete, rotation = "rotate-1" }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const cardCount = Array.isArray(set.flashcards) ? set.flashcards.length : 0;
   const quizCount = Array.isArray(set.quiz) ? set.quiz.length : 0;
   const attemptCount = Array.isArray(set.attempts) ? set.attempts.length : 0;
@@ -95,21 +97,45 @@ export default function StudySetCard({ set, onDelete, rotation = "rotate-1" }) {
             Study Now <ArrowRight className="w-4 h-4" />
           </Link>
 
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm(`Delete "${set.title}"?`)) {
-                  onDelete(set.id);
-                }
-              }}
-              className="p-2.5 text-slate-300 hover:text-red-500 transition-colors rounded-lg"
-              title="Delete set"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          )}
+          {onDelete &&
+            (confirmingDelete ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmingDelete(false);
+                    onDelete(set.id);
+                  }}
+                  className="px-2.5 py-1.5 bg-rose-500 text-white rounded-lg text-xs font-bold font-hand hover:bg-rose-600 transition-colors"
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmingDelete(false);
+                  }}
+                  className="px-2 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold font-hand hover:bg-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmingDelete(true);
+                }}
+                className="p-2.5 text-slate-300 hover:text-red-500 transition-colors rounded-lg"
+                title="Delete set"
+                aria-label={`Delete ${set.title}`}
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            ))}
         </div>
       </div>
     </div>

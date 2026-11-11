@@ -6,6 +6,8 @@ import { generateStudyContent } from "@/lib/server/ai";
 import { extractTextFromPdf } from "@/lib/server/pdf";
 import { GenerationRequestSchema } from "@/lib/schemas/studySet";
 
+const MAX_PDF_BYTES = 15 * 1024 * 1024; // 15 MB
+
 export async function POST(request) {
   try {
     const contentType = request.headers.get("content-type") || "";
@@ -18,7 +20,15 @@ export async function POST(request) {
     let sourceMeta = { type: "text", name: null };
 
     if (contentType.includes("multipart/form-data")) {
-      const formData = await request.formData();
+      let formData;
+      try {
+        formData = await request.formData();
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid multipart form-data request.", code: "INVALID_MULTIPART" },
+          { status: 400 }
+        );
+      }
       const file = formData.get("file");
       const textInput = formData.get("text");
       const modeInput = formData.get("mode");
@@ -38,6 +48,29 @@ export async function POST(request) {
       }
 
       if (file && typeof file === "object" && file.size > 0) {
+        if (file.size > MAX_PDF_BYTES) {
+          return NextResponse.json(
+            {
+              error: "Uploaded PDF exceeds the 15 MB size limit. Please upload a smaller file.",
+              code: "FILE_TOO_LARGE",
+            },
+            { status: 413 }
+          );
+        }
+
+        const isPdf =
+          file.type === "application/pdf" ||
+          (typeof file.name === "string" && file.name.toLowerCase().endsWith(".pdf"));
+        if (!isPdf) {
+          return NextResponse.json(
+            {
+              error: "Only PDF files are supported for document upload.",
+              code: "INVALID_FILE_TYPE",
+            },
+            { status: 400 }
+          );
+        }
+
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const pdfResult = await extractTextFromPdf(buffer);
@@ -60,7 +93,15 @@ export async function POST(request) {
         text = String(textInput).trim();
       }
     } else {
-      const body = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return NextResponse.json(
+          { error: "Invalid JSON request body.", code: "INVALID_JSON" },
+          { status: 400 }
+        );
+      }
       text = String(body.text || "").trim();
       mode = body.mode || "both";
       targetCount = body.targetCount || 6;
@@ -99,11 +140,11 @@ export async function POST(request) {
     }
 
     const generated = await generateStudyContent({
-      text,
-      mode,
-      targetCount,
-      refinementPrompt,
-      existingSet,
+      text: validation.data.text,
+      mode: validation.data.mode,
+      targetCount: validation.data.targetCount,
+      refinementPrompt: validation.data.refinementPrompt,
+      existingSet: validation.data.existingSet,
       signal: request.signal,
     });
 
@@ -127,8 +168,12 @@ export async function POST(request) {
         ? 401
         : err.code === "RATE_LIMIT"
         ? 429
-        : err.code === "SAFETY_BLOCK"
+        : err.code === "SAFETY_BLOCK" || err.code === "UNPROCESSABLE_PDF"
         ? 422
+        : err.code === "INVALID_PDF" || err.code === "INVALID_JSON" || err.code === "VALIDATION_FAILED"
+        ? 400
+        : err.code === "MALFORMED_AI_OUTPUT"
+        ? 502
         : 500;
 
     return NextResponse.json(

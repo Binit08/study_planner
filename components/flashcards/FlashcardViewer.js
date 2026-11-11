@@ -2,10 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  RotateCw,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsRight,
   HelpCircle,
   Volume2,
   VolumeX,
@@ -14,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import FormattedContent from "@/components/ui/FormattedContent";
+import FlashcardControls from "./FlashcardControls";
 
 export default function FlashcardViewer({
   cards = [],
@@ -262,8 +259,22 @@ export default function FlashcardViewer({
       {/* 3D Flip Card */}
       {currentCard ? (
         <div
+          role="button"
+          tabIndex={0}
+          aria-pressed={isFlipped}
+          aria-label={
+            isFlipped
+              ? `Flashcard ${currentIndex + 1} of ${cardOrder.length}, answer side. Press Enter or Space to show question.`
+              : `Flashcard ${currentIndex + 1} of ${cardOrder.length}, question side. Press Enter or Space to reveal answer.`
+          }
           onClick={handleFlip}
-          className="relative min-h-[300px] sm:min-h-[330px] rounded-2xl cursor-pointer select-none perspective-1000"
+          onKeyDown={(e) => {
+            if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              handleFlip();
+            }
+          }}
+          className="relative min-h-[300px] sm:min-h-[330px] rounded-2xl cursor-pointer select-none perspective-1000 focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400"
         >
           <div
             className={`flip-card-inner min-h-[300px] sm:min-h-[330px] ${isFlipped ? "flipped" : ""
@@ -353,7 +364,7 @@ export default function FlashcardViewer({
               {/* Center Answer */}
               <div className="my-auto py-3 text-center flex flex-col items-center justify-center max-w-xl">
                 <Zap className="w-10 h-10 text-yellow-500 mb-2" />
-                <div className="text-lg sm:text-xl font-normal leading-relaxed text-[#2d2d2d] text-left">
+                <div className="text-base sm:text-lg font-sans font-normal leading-relaxed text-[#2d2d2d] text-left">
                   <FormattedContent text={currentCard.back} />
                 </div>
               </div>
@@ -384,118 +395,25 @@ export default function FlashcardViewer({
         </div>
       ) : (
         <div className="bg-white p-8 wobbly-border-sm hard-shadow-sm text-center">
-          <p className="text-xl font-hand text-slate-600">No cards match the "{filter}" filter.</p>
+          <p className="text-xl font-hand text-slate-600">
+            No cards match the &ldquo;{filter}&rdquo; filter.
+          </p>
         </div>
       )}
 
       {/* Control Buttons */}
-      <div className="pt-2">
-        {currentCard && isFlipped ? (
-          /* Post-Flip Rating Bar (Anki Style) */
-          <div className="w-full bg-white p-3.5 wobbly-border-sm hard-shadow flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={handleNext}
-              className="flex flex-col items-center justify-center px-4 py-2 border-2 border-slate-300 rounded-xl hover:bg-slate-50 font-hand font-bold text-slate-600"
-              title="Skip without rating"
-            >
-              <ChevronsRight className="w-5 h-5" />
-              <span className="text-sm">Skip</span>
-            </button>
-
-            <div className="flex-1 grid grid-cols-3 gap-3">
-              {/* Again (1) */}
-              <button
-                type="button"
-                onClick={() => {
-                  handleSetStatus("learning");
-                  handleNext();
-                }}
-                className="py-3 px-2 rounded-xl border-2 border-[#2d2d2d] bg-red-100 hover:bg-red-200 hard-shadow-sm btn-press font-hand font-bold text-red-900 flex flex-col items-center justify-center cursor-pointer"
-              >
-                <span className="text-xl leading-none mb-0.5">✕</span>
-                <span className="text-base flex items-center gap-1">
-                  Again <kbd className="text-[10px] font-mono px-1 rounded bg-white border border-[#2d2d2d]">1</kbd>
-                </span>
-              </button>
-
-              {/* Hard (2) */}
-              <button
-                type="button"
-                onClick={() => {
-                  handleSetStatus("learning");
-                  handleNext();
-                }}
-                className="py-3 px-2 rounded-xl border-2 border-[#2d2d2d] bg-yellow-200 hover:bg-yellow-300 hard-shadow-sm btn-press font-hand font-bold text-yellow-900 flex flex-col items-center justify-center cursor-pointer"
-              >
-                <span className="text-xl leading-none mb-0.5">⚡</span>
-                <span className="text-base flex items-center gap-1">
-                  Hard <kbd className="text-[10px] font-mono px-1 rounded bg-white border border-[#2d2d2d]">2</kbd>
-                </span>
-              </button>
-
-              {/* Easy (3) */}
-              <button
-                type="button"
-                onClick={() => {
-                  handleSetStatus("mastered");
-                  handleNext();
-                }}
-                className="py-3 px-2 rounded-xl border-2 border-[#2d2d2d] bg-green-200 hover:bg-green-300 hard-shadow-sm btn-press font-hand font-bold text-green-900 flex flex-col items-center justify-center cursor-pointer"
-              >
-                <span className="text-xl leading-none mb-0.5">😄</span>
-                <span className="text-base flex items-center gap-1">
-                  Easy <kbd className="text-[10px] font-mono px-1 rounded bg-white border border-[#2d2d2d]">3</kbd>
-                </span>
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleNext}
-              className="p-3 border-2 border-slate-300 rounded-xl hover:bg-slate-50 text-slate-600"
-              title="Next card"
-            >
-              <ChevronsRight className="w-5 h-5" />
-            </button>
-          </div>
-        ) : (
-          /* Pre-Flip Bar */
-          <div className="w-full bg-white p-3 wobbly-border-sm hard-shadow-sm flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={handlePrev}
-              disabled={cardOrder.length <= 1}
-              className="px-4 py-2 border-2 border-slate-300 rounded-xl hover:bg-slate-50 font-hand font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Previous
-            </button>
-
-            <button
-              type="button"
-              onClick={handleFlip}
-              className="flex-1 max-w-sm py-3 px-6 bg-yellow-400 font-bold font-hand text-xl wobbly-border-sm hard-shadow-sm hover:bg-yellow-300 btn-press flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <RotateCw className="w-5 h-5 text-[#2d2d2d]" />
-              <span>Flip to Reveal Answer</span>
-              <kbd className="text-xs font-mono px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d]">
-                Space
-              </kbd>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={cardOrder.length <= 1}
-              className="px-4 py-2 border-2 border-slate-300 rounded-xl hover:bg-slate-50 font-hand font-bold text-lg disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
-            >
-              Next
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        )}
-      </div>
+      <FlashcardControls
+        hasCard={Boolean(currentCard)}
+        isFlipped={isFlipped}
+        deckLength={cardOrder.length}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        onFlip={handleFlip}
+        onRate={(status) => {
+          handleSetStatus(status);
+          handleNext();
+        }}
+      />
     </div>
   );
 }
