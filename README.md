@@ -192,6 +192,119 @@ All 28 automated tests will run and verify AI parsing, scoring, and storage.
 
 ---
 
+## 📖 Usage Guide
+
+StudyGold is designed to guide you through your entire study workflow—from converting raw notes into study materials, to active recall, self-testing, and spaced-repetition planning.
+
+### 1. Generating a Study Set (`/`)
+1. **Input Notes or Upload PDF**:
+   - Paste lecture notes, bullet points, or syllabus topics directly into the text box, **or**
+   - Upload a slide deck or textbook chapter PDF (up to 15 MB).
+2. **Customize Settings**:
+   - Enter a title (or let Gemini name it automatically).
+   - Select your card count (5 to 30) and difficulty level (*Beginner*, *Intermediate*, or *Advanced*).
+3. **Generate**: Click **"Generate Study Materials"**. Within seconds, Gemini generates:
+   - 📝 **Executive Summary**: High-yield takeaways and core concepts.
+   - 📇 **Flashcards**: Front/back cards with contextual hints.
+   - ❓ **Multiple-Choice Quiz**: Questions with explanations for all options.
+   - ✅ **Checklist**: Actionable milestones to guide your revision.
+4. **Iterative AI Refinement**:
+   - Use the **Refinement Bar** at the bottom to tweak the generated set (e.g., *"Make explanations simpler"*, *"Add 3 more questions on meiosis"*).
+   - Use the **Undo** button to revert any refinement step immediately.
+
+### 2. Studying with Flashcards (`/flashcards` or `/study/[id]`)
+- **3D Card Flip**: Click the card or press `Space` to reveal the answer.
+- **Keyboard Shortcuts**:
+  - `Space` : Flip front / back
+  - `←` / `→` : Previous / Next card
+  - `H` : Toggle hint
+  - `1` or `2` : Rate as **"Still Learning"** (schedules review again tomorrow via SM-2)
+  - `3` : Rate as **"Mastered"** (expands review interval into the future)
+- **Audio Read-Aloud**: Click the speaker icon to listen to questions and answers using browser Text-to-Speech (TTS).
+- **Deck Filters**: Filter cards by *All*, *Due Today*, *Learning*, or *Mastered*.
+
+### 3. Taking Quizzes & Drilling Mistakes (`/quizzes`)
+1. **Interactive Test**: Answer multiple-choice questions using keyboard numbers `1`, `2`, `3`, `4` or mouse clicks. Navigate with `←` / `→`.
+2. **Score & Feedback**: Submit to see your percentage score, letter grade, and detailed rationale for each answer.
+3. **Retest Mistakes Only**: Click **"Retest Mistakes Only"** to immediately re-attempt only the questions you got wrong until you achieve 100% mastery.
+
+### 4. Planning with Spaced Repetition (`/planner`)
+- **Weekly Schedule**: View upcoming card reviews automatically scheduled by the **SuperMemo SM-2 algorithm**.
+- **Roll Overdue to Today**: Missed a study session? One click rolls all overdue cards to today without breaking your streak.
+- **Exam Countdown**: Set target exam dates to get milestone checklists and study pacing.
+- **Focus Timer**: Use the built-in Pomodoro timer to log focused study minutes and maintain your daily streak.
+
+### 5. Library & Exporting (`/history`)
+- **Library Search**: Easily filter, search, and reopen any previously saved deck.
+- **One-Click Export**:
+  - 📥 **Anki (.csv)**: Ready for instant import into Anki desktop or mobile.
+  - 📝 **Markdown (.md)**: Clean formatted text for Obsidian, Notion, or personal notes.
+
+---
+
+## 🤖 AI-Usage Note & Specifications
+
+### 1. In-App AI Configuration
+
+| Parameter | Configuration | Explanation |
+| :--- | :--- | :--- |
+| **Model** | `gemini-2.5-flash` | Fast, cost-efficient, high-reasoning model (configurable via `GEMINI_MODEL`) |
+| **SDK** | `@google/genai` (v1beta) | Official Google Gen AI Node.js SDK |
+| **Response Format** | `application/json` | Enforced structured JSON adhering to strict `Type.OBJECT` schema |
+| **Temperature** | `0.3` (initial) / `0.2` (retry) | Low temperature to prevent hallucinations and enforce factual accuracy |
+| **Max Output Tokens** | `8,192` tokens | Provides ample room for large sets (up to 30 cards + quizzes + checklists) |
+| **Timeout & Retry** | `45s` timeout / 1 auto-retry | Self-healing fallback with retry and schema validation (`aiParser.js`) |
+
+#### Token Usage & Economics
+- **Typical Input Tokens**: ~500 to 3,500 tokens per generation (depending on length of lecture notes or uploaded PDF pages).
+- **Typical Output Tokens**: ~800 to 2,200 tokens (summary, cards, quiz with explanations, and checklist).
+- **Cost**: **100% Free** under Google AI Studio's free tier (up to 15 Requests/Min), or less than **$0.001 USD** per generation on pay-as-you-go.
+
+### 2. AI Assistance Disclosure (Development)
+
+In accordance with transparent AI-assisted development practices:
+- **Tools Used**: Google Gemini / Antigravity Agent.
+- **Areas of AI Assistance**:
+  - Scaffolding Next.js 14 App Router boilerplate and Tailwind utility styles.
+  - Implementing the SuperMemo SM-2 spaced repetition math formulas (`lib/server/planner.js`).
+  - Generating initial unit test suites for scoring, parser healing, and local storage (`tests/`).
+  - Speeding up custom CSS for the paper notebook aesthetic (dot grid `#fdfbf7`, wobbly borders).
+- **Human Oversight & Verification**:
+  - All AI-generated logic was reviewed, refactored, and tested against edge cases.
+  - API routes and PDF uploads were tested with real files, with zero mock data in final runtime.
+
+---
+
+## ⚠️ Known Limitations
+
+These limitations are straightforward and easy to explain:
+
+1. **Digital PDFs Only (No OCR)**:
+   - StudyGold parses selectable digital text from PDFs. If a user uploads a scanned photo or image-only PDF, text cannot be extracted unless it is run through an OCR tool first.
+2. **Gemini Free-Tier Rate Limits**:
+   - The free tier of Google AI Studio allows up to 15 requests per minute (RPM). Generating dozens of decks in rapid succession may trigger a short rate-limit cooldown.
+
+3. **Internet Required for AI Features**:
+   - Generating new study sets or chatting with the AI refinement bar requires an active internet connection to communicate with Google Gemini. (Reviewing already-saved decks works offline).
+4. **Browser Text-to-Speech (TTS) Variations**:
+   - The flashcard audio feature uses your web browser's built-in Web Speech API. Voice tone and accents vary depending on whether you are using Chrome, Safari, or Edge.
+
+---
+
+## ⏱️ Time Spent
+
+**Total Time Spent:** Approximately **7 Hours**
+
+| Stage | Time | Focus Areas |
+| :--- | :---: | :--- |
+| **1. Architecture & Setup** | ~1 hr | Project planning, Next.js 14 setup, Tailwind styling, dual-storage design (local JSON file fallback + Supabase). |
+| **2. AI Pipeline & Backend** | ~1.5 hrs | Integrating Google Gemini (`@google/genai`), prompt engineering for high-yield study material, JSON schema enforcement, PDF parser, and self-healing parser with retry logic. |
+| **3. Frontend & Paper UI** | ~2 hrs | Handwritten notebook design system (`globals.css`, dot grid, wobbly borders), 3D flipping flashcards with audio read-aloud, keyboard navigation, and interactive quiz player. |
+| **4. Spaced Repetition & Planner** | ~1.5 hrs | Implementing the SuperMemo SM-2 algorithm, 7-day study calendar, "Roll Overdue to Today" logic, exam countdowns, and Pomodoro focus timer. |
+| **5. Testing & Documentation** | ~1 hr | Writing 28 automated tests (Vitest/Jest), setting up interactive MkDocs documentation, and creating comprehensive README documentation. |
+
+---
+
 ## Interactive Documentation (MkDocs)
 
 StudyGold includes a full interactive documentation site built with **MkDocs**:
