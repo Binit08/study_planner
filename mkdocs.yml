@@ -1,0 +1,61 @@
+site_name: StudyGold Documentation
+site_description: Complete guide and codebase documentation for StudyGold
+site_author: Binit
+repo_name: Binit08/study_planner
+repo_url: https://github.com/Binit08/study_planner
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: amber
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: amber
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - System Overview:
+      - How It Works: architecture/overview.md
+      - Data & Storage: architecture/database-storage.md
+      - AI & Gemini Pipeline: architecture/ai-pipeline.md
+  - Feature Guides:
+      - AI Study Generator: modules/generation-engine.md
+      - Flashcards: modules/flashcards.md
+      - Quizzes: modules/quizzes.md
+      - Study Planner & Spaced Repetition: modules/planner-sm2.md
+      - Library & Decks: modules/library-workspace.md
+  - Codebase & API:
+      - File & Folder Guide: codebase-guide.md
+      - API Routes: api-reference/endpoints.md
+  - Setup & Running:
+      - Getting Started: guide/setup-and-run.md

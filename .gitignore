@@ -32,3 +32,6 @@ yarn-error.log*
 # Local data fallback store
 .data/
 
+# MkDocs build output
+site/
+
