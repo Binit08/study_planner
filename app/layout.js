@@ -18,6 +18,10 @@ export const metadata = {
   title: "StudyGold | AI Study Assistant",
   description:
     "Transform messy notes and lecture PDFs into interactive flashcards, quizzes, and study plans with Google Gemini structured output.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }) {
