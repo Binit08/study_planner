@@ -12,29 +12,33 @@ Here is a visual map of how the entire system fits together:
 
 ```mermaid
 flowchart TD
-    User["👤 Student / Browser"] --> UI["🌐 Next.js 14 Frontend (React 18)"]
+    User["Student or Browser"] --> UI["Next.js 14 Frontend (React 18)"]
 
     subgraph Pages ["Frontend Pages"]
         UI --> P1["/ (AI Study Generator)"]
-        UI --> P2["/planner (Weekly Schedule & SM-2)"]
+        UI --> P2["/planner (Weekly Schedule and SM-2)"]
         UI --> P3["/flashcards (3D Card Viewer)"]
         UI --> P4["/quizzes (Quiz Player)"]
         UI --> P5["/history (Saved Decks Library)"]
         UI --> P6["/study/:id (Deck Workspace)"]
     end
 
-    subgraph Backend ["Next.js App Router API Routes (/api/*)"]
+    subgraph Backend ["Next.js App Router API Routes"]
         P1 --> API_Gen["/api/generate"]
-        P2 --> API_Plan["/api/planner/*"]
-        P3 & P4 & P5 & P6 --> API_Sets["/api/study-sets/*"]
-        P2 & P6 --> API_Check["/api/checklist"]
+        P2 --> API_Plan["/api/planner routes"]
+        P3 --> API_Sets["/api/study-sets routes"]
+        P4 --> API_Sets
+        P5 --> API_Sets
+        P6 --> API_Sets
+        P2 --> API_Check["/api/checklist"]
+        P6 --> API_Check
     end
 
-    subgraph Logic ["Server Business Logic (lib/server/*)"]
-        API_Gen --> AI_Pipeline["ai.js & aiParser.js & aiRetry.js"]
-        API_Gen --> PDF_Parser["pdf.js (pdf-parse)"]
-        API_Plan --> Planner_Math["planner.js (SM-2 Algorithm)"]
-        API_Sets --> Scoring_Engine["scoring.js (Quiz Grading)"]
+    subgraph Logic ["Server Business Logic"]
+        API_Gen --> AI_Pipeline["AI Pipeline (ai.js, aiParser.js, aiRetry.js)"]
+        API_Gen --> PDF_Parser["PDF Parser (pdf.js)"]
+        API_Plan --> Planner_Math["Planner Math (planner.js)"]
+        API_Sets --> Scoring_Engine["Scoring Engine (scoring.js)"]
     end
 
     subgraph AI ["AI Cloud"]
@@ -42,10 +46,12 @@ flowchart TD
     end
 
     subgraph Storage ["Dual Storage Layer"]
-        API_Sets & API_Plan & API_Check --> Repos["Repositories (lib/server/repositories/*)"]
-        Repos --> Check{"Are Supabase keys in .env?"}
-        Check -- "Yes" --> Supabase[("Supabase PostgreSQL")]
-        Check -- "No (Default)" --> LocalJSON[("Local File: .local-store.json")]
+        API_Sets --> Repos["Repositories"]
+        API_Plan --> Repos
+        API_Check --> Repos
+        Repos --> Check{"Are Supabase keys configured?"}
+        Check -->|Yes| Supabase["Supabase PostgreSQL"]
+        Check -->|No - Default| LocalJSON["Local File: .local-store.json"]
     end
 ```
 
@@ -65,7 +71,7 @@ sequenceDiagram
 
     Student->>Browser: Pastes notes or uploads a PDF
     Browser->>Backend: POST /api/generate
-    Backend->>Gemini: Sends notes + structured prompt
+    Backend->>Gemini: Sends notes and structured prompt
     Gemini-->>Backend: Returns JSON with summary, cards, quiz
     Backend->>Backend: Validates data (drops any broken items)
     Backend->>DB: Saves clean study set
@@ -79,8 +85,8 @@ When you review cards, StudyGold calculates when you should see each card again 
 ```mermaid
 flowchart LR
     Card["Review Flashcard"] --> Answer{"Did you remember the answer?"}
-    Answer -- "Still Learning (L)" --> Reset["Reset review interval to 1 day<br/>(Review again tomorrow)"]
-    Answer -- "Mastered (M)" --> Multiply["Increase interval by Ease Factor<br/>(1 day → 3 days → 6 days → 2 weeks)"]
+    Answer -->|Still Learning| Reset["Reset review interval to 1 day<br>Review again tomorrow"]
+    Answer -->|Mastered| Multiply["Increase interval by Ease Factor<br>1 day to 3 days to 6 days to 2 weeks"]
     Reset --> SaveRating["Update next_review_at date in database"]
     Multiply --> SaveRating
 ```
@@ -89,12 +95,12 @@ flowchart LR
 ```mermaid
 flowchart TD
     Start["Take Quiz (10 Questions)"] --> Submit["Submit Answers"]
-    Submit --> Grade["Grade answers & calculate % score"]
+    Submit --> Grade["Grade answers and calculate score percentage"]
     Grade --> SaveAttempt["Save score to attempt history"]
     SaveAttempt --> Review["See results with explanations"]
     Review --> Choice{"Got any wrong?"}
-    Choice -- "Yes" --> Retest["Click 'Retest Mistakes Only'<br/>Tests only the questions you missed!"]
-    Choice -- "No (100%)" --> Done["Done! Knowledge mastered 🎉"]
+    Choice -->|Yes| Retest["Click Retest Mistakes Only<br>Practice only missed questions"]
+    Choice -->|No - 100 percent| Done["Done! Knowledge mastered"]
 ```
 
 ---

@@ -6,23 +6,23 @@ Here is a simple picture of how the whole system connects:
 
 ```mermaid
 flowchart TD
-    User["👤 Student / User"] --> Browser["🌐 Web Browser (Next.js UI)"]
+    User["Student or User"] --> Browser["Web Browser - Next.js UI"]
 
     subgraph Frontend ["Next.js Frontend (React)"]
-        Browser --> Pages["Pages: /, /planner, /flashcards, /quizzes, /history"]
+        Browser --> Pages["Pages: home, planner, flashcards, quizzes, history"]
         Pages --> Components["UI Components (Cards, Timer, Quiz Player)"]
     end
 
     subgraph Backend ["Next.js App Router (Backend APIs)"]
-        Components -->|HTTP Fetch| API["API Routes (/api/*)"]
-        API --> ServerLib["Server Libraries (lib/server/*)"]
+        Components -->|HTTP Fetch| API["API Routes"]
+        API --> ServerLib["Server Libraries"]
         ServerLib --> AI["Google Gemini 2.5 Flash"]
         ServerLib --> Repo["Data Repositories"]
     end
 
     subgraph Storage ["Storage Layer"]
-        Repo -->|"If keys present"| Supabase["Supabase (PostgreSQL Cloud)"]
-        Repo -->|"If no keys"| LocalJSON["Local File (.local-store.json)"]
+        Repo -->|If keys present| Supabase["Supabase (PostgreSQL Cloud)"]
+        Repo -->|If no keys| LocalJSON["Local File (.local-store.json)"]
     end
 ```
 

@@ -14,9 +14,9 @@ The code in `lib/server/studySets.js` automatically checks if you provided Supab
 
 ```mermaid
 flowchart TD
-    Request["API Request to read or write data"] --> CheckEnv{"Are SUPABASE_URL and<br/>SERVICE_ROLE_KEY set in .env?"}
-    CheckEnv -- Yes --> UseSupabase["Use Supabase PostgreSQL<br/>(lib/server/supabase.js)"]
-    CheckEnv -- No --> UseLocal["Use Local File Store<br/>(lib/server/localStore.js writes to .local-store.json)"]
+    Request["API Request to read or write data"] --> CheckEnv{"Are SUPABASE_URL and<br>SERVICE_ROLE_KEY set in .env?"}
+    CheckEnv -->|Yes| UseSupabase["Use Supabase PostgreSQL<br>(lib/server/supabase.js)"]
+    CheckEnv -->|No| UseLocal["Use Local File Store<br>(lib/server/localStore.js writes to .local-store.json)"]
 ```
 
 This means:

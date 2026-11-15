@@ -15,8 +15,8 @@ When you learn something new, your brain forgets it over time unless you review 
 ```mermaid
 flowchart LR
     Card["Card Rated"] --> Choice{"Did you know it?"}
-    Choice -- "Still Learning" --> Short["Reset Interval to 1 Day<br/>(Review Tomorrow)"]
-    Choice -- "Mastered" --> Long["Multiply Interval (e.g. 1d → 3d → 7d)<br/>(Review Later)"]
+    Choice -->|Still Learning| Short["Reset Interval to 1 Day<br>Review Tomorrow"]
+    Choice -->|Mastered| Long["Multiply Interval<br>1 day to 3 days to 7 days"]
 ```
 
 ### The Math Behind SM-2 (Simple Explanation)

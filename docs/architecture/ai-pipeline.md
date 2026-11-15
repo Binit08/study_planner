@@ -10,13 +10,13 @@ The AI's job is simple: take raw, messy student notes (or an uploaded PDF) and t
 
 ```mermaid
 flowchart TD
-    RawInput["Input: Plain Text or PDF"] --> Preprocess["1. Check Size & Format<br/>(If PDF: extract text with pdf-parse)"]
-    Preprocess --> Prompt["2. Build Gemini Prompt<br/>(Instruct AI to reply with strict JSON)"]
+    RawInput["Input: Plain Text or PDF"] --> Preprocess["1. Check Size and Format<br>If PDF: extract text with pdf-parse"]
+    Preprocess --> Prompt["2. Build Gemini Prompt<br>Instruct AI to reply with strict JSON"]
     Prompt --> CallGemini["3. Call Gemini 2.5 Flash"]
-    CallGemini --> Parse{"4. aiParser.js<br/>Extract clean JSON & validate with Zod"}
+    CallGemini --> Parse{"4. aiParser.js<br>Extract clean JSON and validate with Zod"}
 
-    Parse -- "Valid" --> Save["5. Save Study Set to Database"]
-    Parse -- "Malformed or Incomplete" --> Retry["6. aiRetry.js<br/>Automatically retry once with feedback"]
+    Parse -->|Valid| Save["5. Save Study Set to Database"]
+    Parse -->|Malformed or Incomplete| Retry["6. aiRetry.js<br>Automatically retry once with feedback"]
     Retry --> CallGemini
 ```
 
