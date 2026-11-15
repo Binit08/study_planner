@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   HelpCircle,
-  Volume2,
-  VolumeX,
   Lightbulb,
   Sparkles,
   Zap,
@@ -28,7 +26,6 @@ export default function FlashcardViewer({
   const [showHint, setShowHint] = useState(false);
   const [filter, setFilter] = useState(initialFilter); // "all" | "due" | "learning" | "unseen" | "mastered"
   const [cardOrder, setCardOrder] = useState([]);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const hasRatedInSessionRef = useRef(false);
 
   useEffect(() => {
@@ -73,33 +70,23 @@ export default function FlashcardViewer({
   const currentCard = activeIndex !== undefined ? deck[activeIndex] : null;
   const currentStatus = activeIndex !== undefined ? progressMap[activeIndex] || "unseen" : "unseen";
 
-  const stopSpeech = useCallback(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-  }, []);
-
   const handleNext = useCallback(() => {
     if (cardOrder.length === 0) return;
-    stopSpeech();
     setIsFlipped(false);
     setShowHint(false);
     setCurrentIndex((prev) => (prev + 1) % cardOrder.length);
-  }, [cardOrder.length, stopSpeech]);
+  }, [cardOrder.length]);
 
   const handlePrev = useCallback(() => {
     if (cardOrder.length === 0) return;
-    stopSpeech();
     setIsFlipped(false);
     setShowHint(false);
     setCurrentIndex((prev) => (prev - 1 + cardOrder.length) % cardOrder.length);
-  }, [cardOrder.length, stopSpeech]);
+  }, [cardOrder.length]);
 
   const handleFlip = useCallback(() => {
-    stopSpeech();
     setIsFlipped((prev) => !prev);
-  }, [stopSpeech]);
+  }, []);
 
   const handleSetStatus = useCallback(
     (status) => {
@@ -110,27 +97,6 @@ export default function FlashcardViewer({
     },
     [activeIndex, onUpdateProgress]
   );
-
-  const handleToggleSpeak = (e) => {
-    e.stopPropagation();
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-    if (isSpeaking) {
-      stopSpeech();
-      return;
-    }
-
-    const textToSpeak = isFlipped ? currentCard?.back : currentCard?.front;
-    if (!textToSpeak) return;
-
-    const clean = textToSpeak.replace(/[$*#`_]/g, "");
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.rate = 1.0;
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
-  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -193,7 +159,7 @@ export default function FlashcardViewer({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-2xl font-bold font-hand text-[#2d2d2d]">{title}</h2>
-            <p className="text-base text-slate-500 font-hand">
+            <p className="hidden sm:block text-base text-slate-500 font-hand">
               <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d] text-xs font-mono font-bold">Space</kbd> flip &bull;{" "}
               <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d] text-xs font-mono font-bold">1</kbd> Again &bull;{" "}
               <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#2d2d2d] text-xs font-mono font-bold">2</kbd> Hard &bull;{" "}
@@ -227,7 +193,7 @@ export default function FlashcardViewer({
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center justify-between border-b-2 border-dashed border-[#2d2d2d]/30 pb-3 font-hand">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-dashed border-[#2d2d2d]/30 pb-3 font-hand">
         <div className="flex items-center gap-2 text-base flex-wrap">
           {[
             { id: "all", label: `All (${deck.length})` },
@@ -274,39 +240,28 @@ export default function FlashcardViewer({
               handleFlip();
             }
           }}
-          className="relative min-h-[300px] sm:min-h-[330px] rounded-2xl cursor-pointer select-none perspective-1000 focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400"
+          className="relative h-[300px] sm:h-[340px] rounded-2xl cursor-pointer select-none perspective-1000 focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400"
         >
           <div
-            className={`flip-card-inner min-h-[300px] sm:min-h-[330px] ${isFlipped ? "flipped" : ""
+            className={`flip-card-inner h-[300px] sm:h-[340px] ${isFlipped ? "flipped" : ""
               }`}
           >
             {/* FRONT FACE (White Paper Card with wobbly border) */}
-            <div className="flip-card-front w-full min-h-[300px] sm:min-h-[330px] bg-white p-6 sm:p-8 wobbly-border-sm hard-shadow flex flex-col justify-between items-center rotate-1 relative transition-colors">
+            <div className="flip-card-front bg-white p-4 sm:p-8 wobbly-border-sm hard-shadow flex flex-col justify-between items-center overflow-y-auto transition-colors">
               {/* Top Bar */}
               <div className="w-full flex items-center justify-between">
                 <span className="text-xs font-bold font-mono bg-yellow-100 border border-[#2d2d2d] px-2.5 py-0.5 rounded uppercase">
                   Card #{activeIndex + 1}
                 </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleToggleSpeak}
-                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
-                      }`}
-                    title="Read out loud"
-                  >
-                    {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  </button>
-                  <span className="text-xs font-bold font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-300 uppercase">
-                    {currentStatus}
-                  </span>
-                </div>
+                <span className="text-xs font-bold font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-300 uppercase">
+                  {currentStatus}
+                </span>
               </div>
 
               {/* Center Question */}
               <div className="my-auto py-4 text-center flex flex-col items-center justify-center max-w-xl">
-                <HelpCircle className="w-10 h-10 text-yellow-500 mb-3" />
-                <div className="text-2xl sm:text-3xl font-bold font-hand text-[#2d2d2d] leading-snug">
+                <HelpCircle className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-500 mb-3" />
+                <div className="text-xl sm:text-3xl font-bold font-hand text-[#2d2d2d] leading-snug">
                   <FormattedContent text={currentCard.front} />
                 </div>
 
@@ -339,26 +294,15 @@ export default function FlashcardViewer({
             </div>
 
             {/* BACK FACE (Yellow Tint Paper Card) */}
-            <div className="flip-card-back w-full min-h-[300px] sm:min-h-[330px] bg-yellow-50 p-6 sm:p-8 wobbly-border-sm hard-shadow flex flex-col justify-between items-center rotate-1 relative transition-colors">
+            <div className="flip-card-back bg-yellow-50 p-4 sm:p-8 wobbly-border-sm hard-shadow flex flex-col justify-between items-center overflow-y-auto transition-colors">
               {/* Top Bar */}
               <div className="w-full flex items-center justify-between">
                 <span className="text-xs font-bold font-mono bg-yellow-200 border border-[#2d2d2d] px-2.5 py-0.5 rounded uppercase">
                   Answer & Explanation
                 </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleToggleSpeak}
-                    className={`p-1.5 rounded-lg border-2 border-[#2d2d2d] transition-colors ${isSpeaking ? "bg-yellow-300 animate-pulse" : "bg-white hover:bg-yellow-50"
-                      }`}
-                    title="Read out loud"
-                  >
-                    {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                  </button>
-                  <span className="text-xs font-bold font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-300 uppercase">
-                    {currentStatus}
-                  </span>
-                </div>
+                <span className="text-xs font-bold font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-300 uppercase">
+                  {currentStatus}
+                </span>
               </div>
 
               {/* Center Answer */}

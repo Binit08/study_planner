@@ -72,6 +72,15 @@ export async function POST(request) {
         }
 
         const bytes = await file.arrayBuffer();
+        if (bytes.byteLength > MAX_PDF_BYTES) {
+          return NextResponse.json(
+            {
+              error: "Uploaded PDF exceeds the 15 MB size limit. Please upload a smaller file.",
+              code: "FILE_TOO_LARGE",
+            },
+            { status: 413 }
+          );
+        }
         const buffer = Buffer.from(bytes);
         const pdfResult = await extractTextFromPdf(buffer);
         
@@ -168,6 +177,10 @@ export async function POST(request) {
         ? 401
         : err.code === "RATE_LIMIT"
         ? 429
+        : err.code === "FILE_TOO_LARGE"
+        ? 413
+        : err.code === "PDF_TIMEOUT"
+        ? 408
         : err.code === "SAFETY_BLOCK" || err.code === "UNPROCESSABLE_PDF"
         ? 422
         : err.code === "INVALID_PDF" || err.code === "INVALID_JSON" || err.code === "VALIDATION_FAILED"

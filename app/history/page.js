@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, PlusCircle, Sparkles, Notebook, ArrowUpDown, BookOpen } from "lucide-react";
 import StudySetCard from "@/components/history/StudySetCard";
+import { CardGridSkeleton } from "@/components/ui/Skeleton";
 
 export default function HistoryPage() {
   const [sets, setSets] = useState([]);
@@ -148,12 +149,7 @@ export default function HistoryPage() {
       )}
 
       {loading ? (
-        <div className="py-20 text-center space-y-4">
-          <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">
-            <Sparkles className="w-6 h-6 text-slate-800" />
-          </div>
-          <p className="text-xl font-hand text-slate-600">Loading your handwritten decks...</p>
-        </div>
+        <CardGridSkeleton count={6} />
       ) : error ? (
         <div className="bg-rose-50 p-8 wobbly-border-sm hard-shadow-sm text-center">
           <p className="text-xl font-hand text-rose-700">{error}</p>

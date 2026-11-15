@@ -133,8 +133,8 @@ export default function ExamGoalsPanel({
       )}
 
       {goals.length === 0 ? (
-        <p className="text-base font-hand text-slate-500 py-2">
-          Add an upcoming exam or deadline to track countdowns and auto-generate a study plan.
+        <p className="text-sm font-hand text-slate-500 py-1">
+          No upcoming exams added yet.
         </p>
       ) : (
         <div className="space-y-3">

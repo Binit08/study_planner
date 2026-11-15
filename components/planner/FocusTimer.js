@@ -146,7 +146,7 @@ export default function FocusTimer({
       </div>
 
       {/* Preset Pills */}
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
         {PRESETS.map((p) => (
           <button
             key={p.label}
@@ -181,7 +181,7 @@ export default function FocusTimer({
 
       {/* Clock Display */}
       <div className="bg-yellow-50/70 p-4 rounded-xl border-2 border-[#2d2d2d] text-center space-y-2">
-        <div className="text-5xl font-bold font-mono tracking-tight text-slate-900">
+        <div className="text-4xl sm:text-5xl font-bold font-mono tabular-nums tracking-tight text-slate-900">
           {mins}:{secs}
         </div>
         <div className="w-full h-2 bg-white rounded-full overflow-hidden border border-[#2d2d2d]">

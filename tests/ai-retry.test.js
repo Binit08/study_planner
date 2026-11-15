@@ -1,12 +1,17 @@
-import { test, describe } from "node:test";
+import { test, describe, beforeEach } from "node:test";
 import assert from "node:assert";
 import {
   classifyAiError,
   isRetryableAiError,
   executeWithSingleRetry,
+  extractRetryAfterMs,
+  resetRateLimitState,
 } from "../lib/server/aiRetry.js";
 
 describe("AI Retry & Error Classification", () => {
+  beforeEach(() => {
+    resetRateLimitState();
+  });
   test("classifyAiError maps 401, 429, and SAFETY errors to explicit codes", () => {
     const authErr = classifyAiError(new Error("Request failed: API_KEY_INVALID 401"));
     assert.strictEqual(authErr.code, "INVALID_API_KEY");
@@ -70,6 +75,26 @@ describe("AI Retry & Error Classification", () => {
       (err) => err.name === "AbortError"
     );
     assert.strictEqual(abortCalls, 0);
+  });
+
+  test("extractRetryAfterMs parses retry-in hints and executeWithSingleRetry retries 429s with backoff", async () => {
+    assert.strictEqual(extractRetryAfterMs(new Error("429: Please retry in 3.2s")), 3200);
+    assert.strictEqual(extractRetryAfterMs(new Error("Generic error")), null);
+
+    let calls = 0;
+    const result = await executeWithSingleRetry(
+      async () => {
+        calls += 1;
+        if (calls <= 2) {
+          throw new Error("429 RESOURCE_EXHAUSTED");
+        }
+        return { ok: true };
+      },
+      { rateLimitDelayMs: 5, maxRateLimitRetries: 2, minGapMs: 0 }
+    );
+
+    assert.strictEqual(calls, 3);
+    assert.deepStrictEqual(result, { ok: true });
   });
 });
 

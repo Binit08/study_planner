@@ -18,10 +18,10 @@ import {
 import GenerationSidebar from "./GenerationSidebar";
 
 const LOADING_STEPS = [
-  "Skimming & parsing raw notes / PDF stream...",
-  "Extracting key concepts & knowledge graphs...",
-  "Formulating flashcards, distractors & explanations...",
-  "Validating structured Zod schemas...",
+  "Reading your notes and materials...",
+  "Extracting core concepts and key topics...",
+  "Generating flashcards, quiz questions & answers...",
+  "Polishing your study set and checklist...",
 ];
 
 export default function GenerationForm({
@@ -59,16 +59,22 @@ export default function GenerationForm({
   ];
 
   useEffect(() => {
-    let interval;
+    let elapsedTimer;
+    let stepTimer;
     if (isLoading) {
       setElapsedSeconds(0);
       setLoadingStep(0);
-      interval = setInterval(() => {
+      elapsedTimer = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+      stepTimer = setInterval(() => {
         setLoadingStep((prev) => Math.min(prev + 1, LOADING_STEPS.length - 1));
-      }, 3000);
+      }, 2500);
     }
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(elapsedTimer);
+      clearInterval(stepTimer);
+    };
   }, [isLoading]);
 
   const handleFileChange = (e) => {
@@ -106,17 +112,17 @@ export default function GenerationForm({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
       {/* Form Card (7 cols) */}
       <div className="lg:col-span-7">
         <div
-          className={`bg-white p-6 sm:p-8 relative transition-all duration-300 wobbly-border hard-shadow tape-effect ${isLoading ? "opacity-60 pointer-events-none" : ""
+          className={`bg-white p-4 sm:p-5 relative transition-all duration-300 wobbly-border hard-shadow tape-effect ${isLoading ? "opacity-60 pointer-events-none" : ""
             }`}
         >
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             {/* 1. Feed me your notes */}
             <div>
-              <label className="block text-2xl font-bold font-hand mb-2 text-[#2d2d2d]">
+              <label className="block text-xl font-bold font-hand mb-1.5 text-[#2d2d2d]">
                 1. Feed me your notes...
               </label>
               <textarea
@@ -131,10 +137,10 @@ export default function GenerationForm({
                     ? "Optional: Add specific focus points or syllabus chapters to extract from the PDF..."
                     : "Paste syllabus, lecture transcripts, or just a topic like 'Photosynthesis' or 'DSA'..."
                 }
-                rows={selectedFile ? 3 : 5}
-                className="w-full p-4 text-xl bg-yellow-50/40 border-2 border-dashed border-slate-400 focus:border-slate-800 focus:outline-none transition-all focus:ring-4 focus:ring-yellow-200/50 rounded-2xl font-normal leading-relaxed text-[#2d2d2d] placeholder:text-slate-400"
+                rows={selectedFile ? 2 : 3}
+                className="w-full p-3 text-base sm:text-lg bg-yellow-50/40 border-2 border-dashed border-slate-400 focus:border-slate-800 focus:outline-none transition-all focus:ring-4 focus:ring-yellow-200/50 rounded-2xl font-normal leading-relaxed text-[#2d2d2d] placeholder:text-slate-400"
               />
-              <div className="flex justify-between items-center mt-2 text-slate-500 text-base">
+              <div className="flex justify-between items-center mt-1 text-slate-500 text-sm">
                 <span className="flex items-center gap-1">
                   <Info className="w-4 h-4 text-slate-400" />
                   {selectedFile ? "PDF attached — notes above will guide focus" : "Paste notes or type any syllabus topic"}
@@ -151,13 +157,13 @@ export default function GenerationForm({
             </div>
 
             {/* 2. Or drop a PDF & 3. Format & Size */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* PDF Drop */}
               <div>
-                <label className="block text-xl font-bold font-hand mb-2 text-[#2d2d2d]">
+                <label className="block text-lg font-bold font-hand mb-1.5 text-[#2d2d2d]">
                   2. Or drop a PDF
                 </label>
-                <div className="border-2 border-dashed border-slate-300 p-4 rounded-xl text-center hover:bg-slate-50 transition-colors cursor-pointer relative overflow-hidden min-h-[110px] flex flex-col items-center justify-center">
+                <div className="border-2 border-dashed border-slate-300 p-2.5 rounded-xl text-center hover:bg-slate-50 transition-colors cursor-pointer relative overflow-hidden min-h-[84px] flex flex-col items-center justify-center">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -166,9 +172,9 @@ export default function GenerationForm({
                     className="absolute inset-0 opacity-0 cursor-pointer z-20"
                     id="pdf-upload"
                   />
-                  <Upload className="w-7 h-7 text-slate-400 mb-1" />
+                  <Upload className="w-6 h-6 text-slate-400 mb-0.5" />
                   <p className="text-slate-600 text-sm font-bold">Click to upload lecture PDF</p>
-                  <p className="text-[11px] text-slate-400">PDF text parsed on server</p>
+                  <p className="text-[11px] text-slate-400">Up to 15 MB</p>
 
                   {selectedFile && (
                     <div className="absolute inset-0 bg-green-50 z-10 flex items-center justify-between px-3 border-2 border-green-400 rounded-xl">
@@ -196,10 +202,10 @@ export default function GenerationForm({
 
               {/* Format & Size */}
               <div>
-                <label className="block text-xl font-bold font-hand mb-2 text-[#2d2d2d]">
+                <label className="block text-lg font-bold font-hand mb-1.5 text-[#2d2d2d]">
                   3. Format & Size
                 </label>
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-2 mb-2">
                   <button
                     type="button"
                     onClick={() => setMode("both")}
@@ -260,14 +266,14 @@ export default function GenerationForm({
             </div>
 
             {/* Submit Action */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 bg-yellow-400 text-2xl font-bold py-4 px-6 font-hand transition-all hover:bg-yellow-300 flex items-center justify-center gap-2 active:translate-x-1 active:translate-y-1 wobbly-border-sm hard-shadow-sm btn-press cursor-pointer"
+                className="flex-1 bg-yellow-400 text-xl font-bold py-3 px-6 font-hand transition-all hover:bg-yellow-300 flex items-center justify-center gap-2 active:translate-x-1 active:translate-y-1 wobbly-border-sm hard-shadow-sm btn-press cursor-pointer"
               >
                 <span>Generate Study Assistant</span>
-                <Wand2 className="w-6 h-6 text-[#2d2d2d]" />
+                <Wand2 className="w-5 h-5 text-[#2d2d2d]" />
               </button>
 
               {isLoading && (

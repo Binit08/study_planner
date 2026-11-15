@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { BookOpen, Plus, Sparkles } from "lucide-react";
+import { BookOpen, Plus } from "lucide-react";
+import { StudyDeckSkeleton } from "@/components/ui/Skeleton";
 import QuizPlayer from "@/components/quiz/QuizPlayer";
 
 export default function QuizzesHubPage() {
@@ -53,29 +54,31 @@ export default function QuizzesHubPage() {
   };
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-4 pb-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-dashed border-slate-200 pb-6">
-        <div className="rotate-[-0.5deg]">
-          <div className="inline-block px-3 py-1 bg-yellow-100 wobbly-border-sm text-xs font-bold uppercase mb-2">
-            Assessment &amp; Drill Mode
-          </div>
-          <h1 className="text-4xl font-bold font-hand text-slate-900 flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-yellow-600" />
-            Quiz Practice
-          </h1>
-          <p className="text-lg text-slate-600 font-hand mt-1">
-            Test comprehension, get instant evaluation, and drill down on incorrect answers.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-dashed border-slate-200 pb-3">
+        <h1 className="text-3xl font-bold font-hand text-slate-900 flex items-center gap-2.5">
+          <BookOpen className="w-7 h-7 text-yellow-600" />
+          Quizzes
+        </h1>
 
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold font-hand text-xl wobbly-border-sm hard-shadow-sm hover:bg-yellow-300 transition-all self-start sm:self-auto"
-        >
-          <Plus className="w-5 h-5" />
-          Create New Set
-        </Link>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          {selectedSet && (
+            <Link
+              href={`/study/${selectedSet.id}`}
+              className="text-sm sm:text-base font-bold font-hand text-yellow-700 hover:underline"
+            >
+              Full Study Mode →
+            </Link>
+          )}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-yellow-400 text-slate-900 font-bold font-hand text-lg wobbly-border-sm hard-shadow-sm hover:bg-yellow-300 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            New Set
+          </Link>
+        </div>
       </div>
 
       {/* Set Selector Pills */}
@@ -102,29 +105,14 @@ export default function QuizzesHubPage() {
 
       {/* Main Quiz Player */}
       {loading ? (
-        <div className="py-20 text-center space-y-4">
-          <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">
-            <Sparkles className="w-6 h-6 text-slate-800" />
-          </div>
-          <p className="text-xl font-hand text-slate-600">Loading quiz questions...</p>
-        </div>
+        <StudyDeckSkeleton />
       ) : selectedSet && selectedSet.quiz?.length > 0 ? (
-        <div className="space-y-4">
-          <div className="flex justify-end px-2">
-            <Link
-              href={`/study/${selectedSet.id}`}
-              className="text-base font-bold font-hand text-yellow-700 hover:underline"
-            >
-              Full Study Mode →
-            </Link>
-          </div>
-          <QuizPlayer
-            key={selectedSet.id}
-            questions={selectedSet.quiz}
-            title={selectedSet.title}
-            onSubmitAttempt={handleSubmitAttempt}
-          />
-        </div>
+        <QuizPlayer
+          key={selectedSet.id}
+          questions={selectedSet.quiz}
+          title={selectedSet.title}
+          onSubmitAttempt={handleSubmitAttempt}
+        />
       ) : (
         <div className="bg-white p-12 wobbly-border hard-shadow text-center space-y-4 max-w-xl mx-auto">
           <BookOpen className="w-16 h-16 text-yellow-400 mx-auto" />

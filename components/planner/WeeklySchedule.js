@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { CheckCircle2, Square, Plus, Trash2 } from "lucide-react";
 
@@ -48,6 +48,7 @@ export default function WeeklySchedule({
   const [taskMinutes, setTaskMinutes] = useState(25);
   const [taskSetId, setTaskSetId] = useState("");
   const [addingTask, setAddingTask] = useState(false);
+  const inputRef = useRef(null);
 
   const weekDays = todayStr ? buildWeekDays(todayStr) : [];
   const activeDay = selectedDay || todayStr;
@@ -63,11 +64,16 @@ export default function WeeklySchedule({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!taskTitle.trim()) return;
+    const trimmed = taskTitle.trim();
+    if (!trimmed) {
+      inputRef.current?.focus();
+      return;
+    }
+    if (addingTask) return;
     setAddingTask(true);
     try {
       const ok = await onAddTask({
-        task: taskTitle.trim(),
+        task: trimmed,
         studySetId: taskSetId || null,
         scheduledDate: activeDay === "backlog" ? null : activeDay,
         priority: taskPriority,
@@ -80,16 +86,16 @@ export default function WeeklySchedule({
   };
 
   return (
-    <section className="bg-white p-6 wobbly-border-sm hard-shadow-sm space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-dashed border-slate-200 pb-3">
-        <h2 className="text-2xl font-bold font-hand text-slate-900">Weekly Study Schedule</h2>
+    <section className="bg-white p-5 wobbly-border-sm hard-shadow-sm space-y-4">
+      <div className="flex items-center justify-between gap-2 border-b-2 border-dashed border-slate-200 pb-2.5">
+        <h2 className="text-2xl font-bold font-hand text-slate-900">Weekly Schedule</h2>
         <span className="text-sm font-bold font-hand text-slate-500">
-          {visibleTasks.filter((t) => !t.completed).length} remaining &bull; ~{visibleMinutes}m
+          {visibleTasks.filter((t) => !t.completed).length} open &bull; ~{visibleMinutes}m
         </span>
       </div>
 
-      {/* 7-Day Selector Strip + Backlog */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+      {/* 7-Day Selector Grid + Backlog */}
+      <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
         {weekDays.map((day) => {
           const dayTasks = allTasks.filter((t) => t.scheduled_date === day.key);
           const openCount = dayTasks.filter((t) => !t.completed).length;
@@ -100,16 +106,16 @@ export default function WeeklySchedule({
               key={day.key}
               type="button"
               onClick={() => onSelectDay(day.key)}
-              className={`px-3.5 py-2 rounded-xl border-2 text-left transition-all flex-shrink-0 min-w-[92px] ${
+              className={`px-2.5 py-2 rounded-xl border-2 text-left transition-all ${
                 isSelected
-                  ? "bg-yellow-300 border-[#2d2d2d] hard-shadow-sm -rotate-1"
+                  ? "bg-yellow-300 border-[#2d2d2d] hard-shadow-sm"
                   : "bg-slate-50 border-slate-200 hover:bg-yellow-50"
               }`}
             >
-              <div className="text-sm font-bold font-hand text-slate-900">{day.label}</div>
-              <div className="text-xs font-hand text-slate-500">{day.subLabel}</div>
-              <div className="mt-1 text-xs font-bold font-mono text-slate-700">
-                {openCount > 0 ? `${openCount} due` : dayTasks.length > 0 ? "All done" : "Free"}
+              <div className="text-xs sm:text-sm font-bold font-hand text-slate-900 truncate">{day.label}</div>
+              <div className="text-[11px] font-hand text-slate-500 truncate">{day.subLabel}</div>
+              <div className="mt-0.5 text-[11px] font-bold font-mono text-slate-700 truncate">
+                {openCount > 0 ? `${openCount} due` : dayTasks.length > 0 ? "Done" : "Free"}
               </div>
             </button>
           );
@@ -118,28 +124,28 @@ export default function WeeklySchedule({
         <button
           type="button"
           onClick={() => onSelectDay("backlog")}
-          className={`px-3.5 py-2 rounded-xl border-2 text-left transition-all flex-shrink-0 min-w-[92px] ${
+          className={`px-2.5 py-2 rounded-xl border-2 text-left transition-all ${
             activeDay === "backlog"
               ? "bg-yellow-300 border-[#2d2d2d] hard-shadow-sm"
               : "bg-slate-50 border-slate-200 hover:bg-yellow-50"
           }`}
         >
-          <div className="text-sm font-bold font-hand text-slate-900">Backlog</div>
-          <div className="text-xs font-hand text-slate-500">Unscheduled</div>
-          <div className="mt-1 text-xs font-bold font-mono text-slate-700">
+          <div className="text-xs sm:text-sm font-bold font-hand text-slate-900 truncate">Backlog</div>
+          <div className="text-[11px] font-hand text-slate-500 truncate">Anytime</div>
+          <div className="mt-0.5 text-[11px] font-bold font-mono text-slate-700 truncate">
             {unscheduledCount} open
           </div>
         </button>
       </div>
 
       {/* Tasks for Selected Day */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {visibleTasks.length === 0 ? (
-          <div className="py-8 text-center border-2 border-dashed border-slate-200 rounded-xl">
-            <p className="text-lg font-hand text-slate-400">
+          <div className="py-5 text-center border-2 border-dashed border-slate-200 rounded-xl">
+            <p className="text-base font-hand text-slate-400">
               {activeDay === "backlog"
-                ? "No unscheduled backlog tasks."
-                : "Nothing scheduled for this day yet. Add a task below or auto-build an exam plan!"}
+                ? "No backlog tasks."
+                : "No tasks scheduled for this day."}
             </p>
           </div>
         ) : (
@@ -224,27 +230,28 @@ export default function WeeklySchedule({
       {/* Add Task Form */}
       <form
         onSubmit={handleSubmit}
-        className="pt-4 border-t-2 border-dashed border-slate-200 space-y-3"
+        className="pt-3 border-t-2 border-dashed border-slate-200 space-y-2.5"
       >
-        <div className="flex flex-col sm:flex-row gap-2.5">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={taskTitle}
             onChange={(e) => setTaskTitle(e.target.value)}
             placeholder={
               activeDay === "backlog"
-                ? "Add unscheduled study task..."
-                : `Add study task for ${activeDay === todayStr ? "Today" : activeDay}...`
+                ? "Add backlog task..."
+                : `Add task for ${activeDay === todayStr ? "Today" : activeDay}...`
             }
-            className="flex-1 px-4 py-2.5 bg-white wobbly-border-sm font-hand text-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="flex-1 px-3.5 py-2 bg-white wobbly-border-sm font-hand text-base text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <button
             type="submit"
-            disabled={!taskTitle.trim() || addingTask}
-            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold font-hand text-lg wobbly-border-sm hard-shadow-sm disabled:opacity-40 transition-all"
+            disabled={addingTask}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold font-hand text-base wobbly-border-sm hard-shadow-sm disabled:opacity-50 transition-all"
           >
             <Plus className="w-4 h-4" />
-            Add Task
+            {addingTask ? "Adding..." : "Add"}
           </button>
         </div>
 

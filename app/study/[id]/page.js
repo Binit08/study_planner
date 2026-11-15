@@ -8,7 +8,6 @@ import {
   BookOpen,
   CheckSquare,
   ArrowLeft,
-  Sparkles,
   Trash2,
   Download,
   Copy,
@@ -23,6 +22,7 @@ import QuizPlayer from "@/components/quiz/QuizPlayer";
 import StudyChecklist from "@/components/checklist/StudyChecklist";
 import FocusTimer from "@/components/planner/FocusTimer";
 import StudyAttemptsList from "@/components/study/StudyAttemptsList";
+import { StudyDeckSkeleton } from "@/components/ui/Skeleton";
 import { buildStudySetMarkdown, downloadAnkiCsv } from "@/lib/exportStudySet";
 
 export default function StudySetDetailPage() {
@@ -234,14 +234,7 @@ export default function StudySetDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="py-24 text-center space-y-4">
-        <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">
-          <Sparkles className="w-6 h-6 text-slate-800" />
-        </div>
-        <p className="text-xl font-hand text-slate-600">Loading study deck...</p>
-      </div>
-    );
+    return <StudyDeckSkeleton />;
   }
 
   if (error || !studySet) {

@@ -1,6 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Patrick%2BHand:wght@100;200;300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,8 +8,13 @@
   --paper-bg: radial-gradient(#d1d5db 1px, transparent 1px);
 }
 
+html,
 body {
-  font-family: 'Patrick Hand', cursive;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-patrick-hand), 'Patrick Hand', cursive;
   background-color: #fdfbf7;
   background-image: var(--paper-bg);
   background-size: 24px 24px;
@@ -30,7 +32,7 @@ h4,
 h5,
 h6,
 .font-hand {
-  font-family: 'Kalam', cursive;
+  font-family: var(--font-kalam), 'Kalam', cursive;
 }
 
 /* Wobbly border classes */
@@ -120,8 +122,14 @@ h6,
 .flip-card-back {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+.flip-card-front {
+  transform: rotateY(0deg);
 }
 
 .flip-card-back {

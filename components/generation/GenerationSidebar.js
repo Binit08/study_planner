@@ -28,10 +28,10 @@ export default function GenerationSidebar({
 
         <div>
           <h2 className="text-2xl font-bold font-hand text-[#2d2d2d]">
-            Crafting your wisdom...
+            Preparing your study set...
           </h2>
           <p className="text-base text-slate-600">
-            Gemini 2.5 is synthesizing rigorous study materials.
+            Turning your notes into flashcards, quizzes, and a study plan.
           </p>
         </div>
 
@@ -70,60 +70,57 @@ export default function GenerationSidebar({
         </div>
 
         <div className="p-3 bg-yellow-50 rounded-xl border border-dashed border-yellow-300 text-xs italic text-slate-500">
-          Tip: Press Space anytime on flashcards to flip them physically in 3D!
+          Tip: Press Space anytime on flashcards to flip them!
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 wobbly-border-sm hard-shadow-sm rotate-1">
-        <h3 className="text-2xl font-bold font-hand mb-3 text-[#2d2d2d]">
-          Expected Output 🎯
+    <div className="space-y-4">
+      <div className="bg-white p-4 sm:p-5 wobbly-border-sm hard-shadow-sm">
+        <h3 className="text-xl font-bold font-hand mb-2 text-[#2d2d2d]">
+          What You&apos;ll Get
         </h3>
-        <p className="text-base text-slate-600 leading-relaxed mb-4">
-          Google Gemini will synthesize structured knowledge graphs with zero chat hallucination:
-        </p>
-        <ul className="space-y-2 text-base text-slate-700">
+        <ul className="space-y-1.5 text-sm sm:text-base text-slate-700">
           <li className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-yellow-200 border border-[#2d2d2d] flex items-center justify-center text-xs font-bold">
               ✓
             </span>
-            <span>{itemCount} active-recall 3D flashcards with clues</span>
+            <span>{itemCount} flashcards with clues</span>
           </li>
           <li className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-yellow-200 border border-[#2d2d2d] flex items-center justify-center text-xs font-bold">
               ✓
             </span>
-            <span>{itemCount} four-option auto-graded questions with explanations</span>
+            <span>{itemCount} quiz questions with explanations</span>
           </li>
           <li className="flex items-center gap-2">
             <span className="w-5 h-5 rounded-full bg-yellow-200 border border-[#2d2d2d] flex items-center justify-center text-xs font-bold">
               ✓
             </span>
-            <span>Progressive milestone checklist with task tracker</span>
+            <span>Study checklist</span>
           </li>
         </ul>
       </div>
 
-      <div className="space-y-2.5">
-        <p className="text-lg font-bold font-hand text-slate-600">
-          Or test with a sample sketch:
+      <div className="space-y-2">
+        <p className="text-base font-bold font-hand text-slate-600">
+          Try a sample:
         </p>
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {sampleTopics.map((item, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => onSelectSample(item)}
-              className="w-full text-left p-3.5 bg-white wobbly-border-sm hard-shadow-sm hover:bg-yellow-50 transition-all group flex items-center justify-between"
+              className="w-full text-left p-2.5 sm:p-3 bg-white wobbly-border-sm hard-shadow-sm hover:bg-yellow-50 transition-all group flex items-center justify-between"
             >
               <div>
-                <p className="text-lg font-bold font-hand text-[#2d2d2d] group-hover:text-yellow-700">
+                <p className="text-base font-bold font-hand text-[#2d2d2d] group-hover:text-yellow-700">
                   {item.title}
                 </p>
-                <p className="text-sm text-slate-500 line-clamp-1">{item.desc}</p>
+                <p className="text-xs sm:text-sm text-slate-500 line-clamp-1">{item.desc}</p>
               </div>
               <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 group-hover:text-yellow-600 transition-all flex-shrink-0" />
             </button>

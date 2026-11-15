@@ -154,25 +154,24 @@ export default function QuizPlayer({
     : 0;
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-4">
       {/* Header and Mode Indicator */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b-2 border-dashed border-slate-200 pb-4">
-        <div className="rotate-1">
-          <div className="inline-block px-4 py-1 bg-yellow-100 wobbly-border-sm text-sm font-bold mb-2">
-            {isRetestingWrongOnly ? "Mode: Retesting Mistakes Drill" : "Mode: Single Choice Drills"}
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold font-hand">{title}</h2>
-          <p className="text-lg text-slate-600 mt-1">
-            Answer questions by clicking or using keys <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-800 text-xs font-mono font-bold shadow-sm">1</kbd> - <kbd className="px-1.5 py-0.5 rounded bg-white border border-slate-800 text-xs font-mono font-bold shadow-sm">4</kbd>
-          </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 border-b-2 border-dashed border-slate-200 pb-3">
+        <div>
+          {isRetestingWrongOnly && (
+            <div className="inline-block px-3 py-0.5 bg-yellow-100 wobbly-border-sm text-xs font-bold mb-1">
+              Retesting Mistakes
+            </div>
+          )}
+          <h2 className="text-2xl sm:text-3xl font-bold font-hand">{title}</h2>
         </div>
 
         {!isSubmitted && (
-          <div className="text-right -rotate-1 self-end md:self-auto">
-            <div className="text-3xl font-bold font-hand">
+          <div className="text-left sm:text-right self-stretch sm:self-auto flex sm:block items-center justify-between gap-3">
+            <div className="text-xl sm:text-2xl font-bold font-hand">
               Question {currentIndex + 1} <span className="text-slate-400">/ {activeQuestions.length}</span>
             </div>
-            <div className="w-44 h-3 bg-slate-200 rounded-full mt-2 overflow-hidden border border-slate-800">
+            <div className="w-36 h-2.5 bg-slate-200 rounded-full sm:mt-1 overflow-hidden border border-slate-800">
               <div
                 className="h-full bg-yellow-400 transition-all duration-300"
                 style={{ width: `${progressPercent}%` }}
@@ -184,25 +183,25 @@ export default function QuizPlayer({
 
       {/* Active Quiz Layout (Question + Options + Cheatsheet Sidebar) */}
       {!isSubmitted && currentQ && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-8 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <div className="lg:col-span-8 space-y-3.5">
             {/* Question Card */}
-            <div className="bg-white p-8 wobbly-border hard-shadow relative">
+            <div className="bg-white p-4 sm:p-5 wobbly-border hard-shadow relative">
               <div
-                className="absolute -top-4 -left-4 w-12 h-12 bg-slate-800 text-white flex items-center justify-center font-bold text-xl rotate-[-12deg]"
+                className="absolute -top-3 -left-2 w-8 h-8 sm:w-9 sm:h-9 bg-slate-800 text-white flex items-center justify-center font-bold text-sm sm:text-base rotate-[-12deg]"
                 style={{ borderRadius: "50% 20% 50% 20%" }}
               >
                 #{currentIndex + 1}
               </div>
 
-              <div className="mb-8 mt-2">
-                <h3 className="text-2xl font-bold leading-relaxed font-hand">
+              <div className="mb-3.5 mt-1">
+                <h3 className="text-lg sm:text-xl font-bold leading-snug font-hand">
                   <FormattedContent text={currentQ.question} />
                 </h3>
               </div>
 
               {/* Options */}
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {currentQ.options.map((option, optIdx) => {
                   const isSelected = selectedAnswers[currentIndex] === optIdx;
                   return (
@@ -210,18 +209,18 @@ export default function QuizPlayer({
                       key={optIdx}
                       type="button"
                       onClick={() => handleSelectOption(optIdx)}
-                      className={`w-full flex items-center gap-4 p-5 text-left border-2 border-slate-800 rounded-xl transition-all option-hover group ${isSelected
-                          ? "bg-yellow-100 hard-shadow-sm -rotate-1"
-                          : "bg-white hover:bg-yellow-50 active:translate-x-1 active:translate-y-1"
+                      className={`w-full flex items-center gap-3 p-2.5 sm:p-3 text-left border-2 border-slate-800 rounded-xl transition-all option-hover group ${isSelected
+                          ? "bg-yellow-100 hard-shadow-sm"
+                          : "bg-white hover:bg-yellow-50 active:translate-x-0.5 active:translate-y-0.5"
                         }`}
                     >
                       <span
-                        className={`w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg font-bold text-xl font-hand border border-slate-800 ${isSelected ? "bg-yellow-400" : "bg-slate-100 group-hover:bg-yellow-200"
+                        className={`w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 flex items-center justify-center rounded-lg font-bold text-base font-hand border border-slate-800 ${isSelected ? "bg-yellow-400" : "bg-slate-100 group-hover:bg-yellow-200"
                           }`}
                       >
                         {optIdx + 1}
                       </span>
-                      <span className="text-xl font-hand leading-relaxed flex-1">
+                      <span className="text-base sm:text-lg font-hand leading-snug flex-1">
                         <FormattedContent text={option} />
                       </span>
                     </button>
@@ -231,14 +230,14 @@ export default function QuizPlayer({
             </div>
 
             {/* Navigation and Submission Bar */}
-            <div className="flex justify-between items-center bg-white p-4 wobbly-border-sm hard-shadow-sm">
+            <div className="flex flex-wrap justify-between items-center gap-2 bg-white p-2.5 sm:p-3 wobbly-border-sm hard-shadow-sm">
               <button
                 type="button"
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
-                className="flex items-center gap-2 px-5 py-2 border-2 border-slate-300 text-slate-500 font-bold hover:text-slate-800 hover:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 border-2 border-slate-300 text-slate-600 font-bold text-sm sm:text-base hover:text-slate-800 hover:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronLeft className="w-5 h-5" /> Previous
+                <ChevronLeft className="w-4 h-4" /> Prev
               </button>
 
               {/* Question dots */}
@@ -306,38 +305,31 @@ export default function QuizPlayer({
           </div>
 
           {/* Quick Cheatsheet Sidebar */}
-          <aside className="lg:col-span-4 space-y-6">
-            <div className="bg-yellow-50/80 p-6 wobbly-border-sm rotate-1 relative">
-              <Info className="absolute -top-3 -right-3 w-8 h-8 text-yellow-600 rotate-12" />
-              <h4 className="text-xl font-bold mb-3 font-hand">Quick Cheatsheet</h4>
-              <ul className="space-y-2 text-slate-700 text-lg">
+          <aside className="lg:col-span-4 space-y-4">
+            <div className="hidden lg:block bg-yellow-50/80 p-4 wobbly-border-sm relative">
+              <Info className="absolute -top-2.5 -right-2.5 w-6 h-6 text-yellow-600" />
+              <h4 className="text-lg font-bold mb-2 font-hand">Shortcuts</h4>
+              <ul className="space-y-1 text-slate-700 text-sm font-hand">
                 <li>
-                  <span className="font-bold">Keys 1-4:</span> Select option
+                  <span className="font-bold">1-4:</span> Select option
                 </li>
                 <li>
-                  <span className="font-bold">Arrow Keys:</span> Navigate questions
-                </li>
-                <li>
-                  <span className="font-bold">Submit:</span> Evaluates and unlocks mistake review
+                  <span className="font-bold">Arrows:</span> Next / Prev
                 </li>
               </ul>
             </div>
 
-            <div className="bg-white p-6 wobbly-border-sm hard-shadow-sm -rotate-1">
-              <h4 className="text-xl font-bold mb-4 font-hand">Current Session</h4>
-              <div className="flex justify-between items-center border-b border-dashed border-slate-200 pb-2 mb-2 text-lg">
+            <div className="bg-white p-4 wobbly-border-sm hard-shadow-sm">
+              <h4 className="text-lg font-bold mb-2 font-hand">Session</h4>
+              <div className="flex justify-between items-center border-b border-dashed border-slate-200 pb-1.5 mb-1.5 text-base">
                 <span>Answered</span>
                 <span className="font-bold">{answeredCount} / {activeQuestions.length}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-dashed border-slate-200 pb-2 mb-2 text-lg">
+              <div className="flex justify-between items-center text-base">
                 <span>Remaining</span>
                 <span className="font-bold text-slate-500">
                   {activeQuestions.length - answeredCount}
                 </span>
-              </div>
-              <div className="flex justify-between items-center text-lg">
-                <span>Total Questions</span>
-                <span className="font-bold">{activeQuestions.length}</span>
               </div>
             </div>
           </aside>

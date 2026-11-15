@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Layers, Plus, Sparkles } from "lucide-react";
+import { Layers, Plus } from "lucide-react";
+import { StudyDeckSkeleton } from "@/components/ui/Skeleton";
 import FlashcardViewer from "@/components/flashcards/FlashcardViewer";
 
 function buildMapsFromProgress(progressList = []) {
@@ -106,17 +107,11 @@ export default function FlashcardsHubPage() {
     <div className="space-y-8 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-dashed border-slate-200 pb-6">
-        <div className="rotate-[-0.5deg]">
-          <div className="inline-block px-3 py-1 bg-yellow-100 wobbly-border-sm text-xs font-bold uppercase mb-2">
-            Active Recall &bull; Spaced Repetition
-          </div>
+        <div>
           <h1 className="text-4xl font-bold font-hand text-slate-900 flex items-center gap-3">
             <Layers className="w-8 h-8 text-yellow-600" />
-            Flashcard Decks
+            Flashcards
           </h1>
-          <p className="text-lg text-slate-600 font-hand mt-1">
-            Flip cards to test memory retention, track SM-2 intervals, and clear today&apos;s due queue.
-          </p>
         </div>
 
         <Link
@@ -156,12 +151,7 @@ export default function FlashcardsHubPage() {
 
       {/* Main Flashcard Viewer Container */}
       {loading ? (
-        <div className="py-20 text-center space-y-4">
-          <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">
-            <Sparkles className="w-6 h-6 text-slate-800" />
-          </div>
-          <p className="text-xl font-hand text-slate-600">Loading flashcard deck...</p>
-        </div>
+        <StudyDeckSkeleton />
       ) : selectedSet && selectedSet.flashcards?.length > 0 ? (
         <div className="space-y-6">
           <div className="flex items-center justify-between px-2">

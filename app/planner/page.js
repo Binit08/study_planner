@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Calendar, AlertTriangle, Plus, Sparkles } from "lucide-react";
+import { Calendar, AlertTriangle, Plus } from "lucide-react";
+import { PlannerSkeleton } from "@/components/ui/Skeleton";
 import PlannerStats from "@/components/planner/PlannerStats";
 import WeeklySchedule from "@/components/planner/WeeklySchedule";
 import ReviewRecommendations from "@/components/planner/ReviewRecommendations";
@@ -35,8 +36,8 @@ export default function PlannerPage() {
   const loadPlanner = useCallback(async () => {
     try {
       const [plannerJson, setsJson] = await Promise.all([
-        requestJson("/api/planner"),
-        requestJson("/api/study-sets"),
+        requestJson("/api/planner", { cache: "no-store" }),
+        requestJson("/api/study-sets", { cache: "no-store" }),
       ]);
 
       if (plannerJson.data) {
@@ -100,11 +101,17 @@ export default function PlannerPage() {
   };
 
   const handleDeleteTask = async (id) => {
+    setOverview((prev) =>
+      prev
+        ? { ...prev, allTasks: prev.allTasks.filter((t) => t.id !== id) }
+        : prev
+    );
     try {
       await requestJson(`/api/checklist/${id}`, { method: "DELETE" });
-      loadPlanner();
+      await loadPlanner();
     } catch (err) {
       setErrorMsg(err.message);
+      await loadPlanner();
     }
   };
 
@@ -196,38 +203,23 @@ export default function PlannerPage() {
   };
 
   if (loading) {
-    return (
-      <div className="py-24 text-center space-y-4">
-        <div className="w-12 h-12 bg-yellow-300 flex items-center justify-center rounded-2xl border-2 border-slate-800 mx-auto animate-spin">
-          <Sparkles className="w-6 h-6 text-slate-800" />
-        </div>
-        <p className="text-xl font-hand text-slate-600">Loading your study planner...</p>
-      </div>
-    );
+    return <PlannerSkeleton />;
   }
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-5 pb-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-dashed border-slate-200 pb-6">
-        <div className="rotate-[-0.5deg]">
-          <div className="inline-block px-3 py-1 bg-yellow-100 wobbly-border-sm text-xs font-bold uppercase mb-2">
-            Daily Schedule &bull; Spaced Review &bull; Exam Goals
-          </div>
-          <h1 className="text-4xl font-bold font-hand text-slate-900 flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-yellow-600" />
-            My Study Planner
-          </h1>
-          <p className="text-lg text-slate-600 font-hand mt-1">
-            Plan your week, clear due flashcards, and stay ahead of upcoming exams.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-dashed border-slate-200 pb-4">
+        <h1 className="text-3xl sm:text-4xl font-bold font-hand text-slate-900 flex items-center gap-2.5">
+          <Calendar className="w-7 h-7 text-yellow-600" />
+          Study Planner
+        </h1>
 
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-yellow-400 text-slate-900 font-bold font-hand text-xl wobbly-border-sm hard-shadow-sm hover:bg-yellow-300 transition-all self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-5 py-2 bg-yellow-400 text-slate-900 font-bold font-hand text-lg wobbly-border-sm hard-shadow-sm hover:bg-yellow-300 transition-all self-start sm:self-auto"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
           New Study Set
         </Link>
       </div>
@@ -271,8 +263,8 @@ export default function PlannerPage() {
       )}
 
       {/* Main 2-Column Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        <div className="lg:col-span-2 space-y-5">
           <WeeklySchedule
             todayStr={overview?.todayStr}
             selectedDay={selectedDay}
@@ -295,7 +287,7 @@ export default function PlannerPage() {
           />
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <FocusTimer studySets={studySets} onSessionLogged={loadPlanner} />
 
           <ExamGoalsPanel
