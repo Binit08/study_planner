@@ -10,11 +10,22 @@ import {
 import FormattedContent from "@/components/ui/FormattedContent";
 import FlashcardControls from "./FlashcardControls";
 
+const EMPTY_MAP = Object.freeze({});
+
+function areArraysEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 export default function FlashcardViewer({
   cards = [],
   flashcards = [],
-  progressMap = {},
-  dueMap = {},
+  progressMap = EMPTY_MAP,
+  dueMap = EMPTY_MAP,
   initialFilter = "all",
   onUpdateProgress,
   onRefineCard,
@@ -25,15 +36,19 @@ export default function FlashcardViewer({
   const [isFlipped, setIsFlipped] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [filter, setFilter] = useState(initialFilter); // "all" | "due" | "learning" | "unseen" | "mastered"
-  const [cardOrder, setCardOrder] = useState([]);
+  const [cardOrder, setCardOrder] = useState(() => deck.map((_, i) => i));
   const hasRatedInSessionRef = useRef(false);
 
   useEffect(() => {
-    setFilter(initialFilter || "all");
+    if (initialFilter) {
+      setFilter((prev) => (prev === initialFilter ? prev : initialFilter));
+    }
   }, [initialFilter]);
 
+  // Compute card order based on deck and filters without triggering render loops
   useEffect(() => {
-    hasRatedInSessionRef.current = false;
+    if (hasRatedInSessionRef.current && filter !== "all") return;
+
     let indices = deck.map((_, i) => i);
     if (filter === "due") {
       indices = indices.filter((i) => Boolean(dueMap[i]));
@@ -43,28 +58,24 @@ export default function FlashcardViewer({
         return status === filter;
       });
     }
-    setCardOrder(indices);
+
+    setCardOrder((prev) => (areArraysEqual(prev, indices) ? prev : indices));
+  }, [deck, filter, progressMap, dueMap]);
+
+  // Reset index & flip state when the user switches filters
+  useEffect(() => {
+    hasRatedInSessionRef.current = false;
     setCurrentIndex(0);
     setIsFlipped(false);
     setShowHint(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deck, filter]);
+  }, [filter]);
 
-  // Sync filtered queue when async progressMap/dueMap arrives before user starts rating
+  // Ensure currentIndex stays within bounds if the card order shrinks
   useEffect(() => {
-    if (hasRatedInSessionRef.current) return;
-    let indices = deck.map((_, i) => i);
-    if (filter === "due") {
-      indices = indices.filter((i) => Boolean(dueMap[i]));
-    } else if (filter !== "all") {
-      indices = indices.filter((i) => {
-        const status = progressMap[i] || "unseen";
-        return status === filter;
-      });
+    if (cardOrder.length > 0 && currentIndex >= cardOrder.length) {
+      setCurrentIndex(cardOrder.length - 1);
     }
-    setCardOrder(indices);
-    setCurrentIndex(0);
-  }, [deck, filter, progressMap, dueMap]);
+  }, [cardOrder.length, currentIndex]);
 
   const activeIndex = cardOrder[currentIndex];
   const currentCard = activeIndex !== undefined ? deck[activeIndex] : null;
